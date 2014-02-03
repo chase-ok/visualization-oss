@@ -1,5 +1,10 @@
 extends layout
 
 block content
+    script(src='/js/networks/index.js')
+
     h1 Networks
-    
+
+    h2 Sankey
+    .well.well-lg
+        svg#sankey-canvas
