@@ -11,6 +11,7 @@ parseByMajor = (content, done) ->
     byMajor.headers = rows[0][1..]
     byMajor.totals = (+total for total in rows[1][1..])
     byMajor.fields = {}
+    byMajor.total = 3306190 # from xlsx file
 
     i = 2
     nextRow = -> i += 1; rows[i-1]
