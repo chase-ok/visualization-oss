@@ -8,6 +8,8 @@ redraw = null
 exports.create = (data) ->
     canvas = $ '#sankey-canvas'
 
+    curvature = 0.4
+
     {nodes, links} = makeNodesAndLinks data
     sankey = d3.sankey()
         .nodeWidth 15
@@ -15,14 +17,15 @@ exports.create = (data) ->
         .size [canvas.width(), canvas.height()]
         .nodes nodes
         .links links
+        .xScale d3.scale.pow().exponent(1)
         .layout 32
 
-    link = drawLinks canvas, links, sankey.link()
+    link = drawLinks canvas, links, sankey.link().curvature curvature
     node = drawNodes canvas, nodes, sankey.nodeWidth()
 
     redraw = ->
         sankey.relayout()
-        link.attr 'd', sankey.link()
+        link.attr 'd', sankey.link().curvature curvature
 
 makeNodesAndLinks = (data) ->
     nodes = []
@@ -75,7 +78,7 @@ drawLinks = (canvas, links, path) ->
         .exponent 0.8
         .clamp yes
         .domain [d3.min(links, (d) -> d.dy), 20]
-        .range [0.02, 0.4]
+        .range [0.02, 0.3]
 
     link = d3.select canvas.get 0
         .append 'g'
@@ -138,6 +141,10 @@ drawNodes = (canvas, nodes, nodeWidth) ->
         .filter (d) -> d.x < canvas.width()/2
             .attr 'x', 6 + nodeWidth
             .attr 'text-anchor', 'start'
+
+    node
+        .on 'mouseover', (d) ->
+
 
     node
 

@@ -17,11 +17,19 @@ makeBrowserifyArgs = (pack) ->
    --transform node_modules/coffeeify
    -o #{publicJs}/#{pack}/index.js"
 
-task 'build:networks', ->
-  execAndLog "browserify #{makeBrowserifyArgs 'networks'}"
+browserifyDirs = ['networks']
 
-task 'watch:networks', ->
-  execAndLog "watchify #{makeBrowserifyArgs 'networks'}"
+for dir in browserifyDirs
+  do (dir) -> 
+    task "build:#{dir}", ->
+      execAndLog "browserify #{makeBrowserifyArgs dir}"
+    task "watch:#{dir}", ->
+      execAndLog "watchify #{makeBrowserifyArgs dir}"
+
+# for sublime 3
+task 'sbuild', ->
+  for dir in browserifyDirs
+    execAndLog "browserify #{makeBrowserifyArgs dir}"
 
 task 'server', 'Starts the node server', ->
   execAndLog 'node app.js'

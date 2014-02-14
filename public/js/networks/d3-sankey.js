@@ -4,7 +4,8 @@ d3.sankey = function() {
       nodePadding = 8,
       size = [1, 1],
       nodes = [],
-      links = [];
+      links = [],
+      xScale = d3.scale.linear().domain([0, 1]).range([0, 1]);
 
   sankey.nodeWidth = function(_) {
     if (!arguments.length) return nodeWidth;
@@ -35,6 +36,12 @@ d3.sankey = function() {
     size = _;
     return sankey;
   };
+
+  sankey.xScale = function(_) {
+    if (!arguments.length) return xScale;
+    xScale = _;
+    return sankey;
+  }
 
   sankey.layout = function(iterations) {
     computeNodeLinks();
@@ -125,9 +132,9 @@ d3.sankey = function() {
       ++x;
     }
 
-    //
     moveSinksRight(x);
     scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
+    applyNodeXScale();
   }
 
   function moveSourcesRight() {
@@ -149,6 +156,15 @@ d3.sankey = function() {
   function scaleNodeBreadths(kx) {
     nodes.forEach(function(node) {
       node.x *= kx;
+    });
+  }
+
+  function applyNodeXScale() {
+    toUnit = d3.scale.linear()
+      .domain([0, size[0]])
+      .range([0, 1]);
+    nodes.forEach(function(node) {
+      node.x = toUnit.invert(xScale(toUnit(node.x)));
     });
   }
 
