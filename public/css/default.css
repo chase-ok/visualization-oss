@@ -11,10 +11,19 @@ body { padding-top: 70px; } /* necessary for fixed-top navbar*/
 
 .sankey-node rect {
   cursor: move;
-  fill-opacity: .9;
-  shape-rendering: crispEdges;
+  fill-opacity: 1.0;
+  stroke-width: 0;
+  stroke: #000;
 }
 
 .sankey-node text {
   pointer-events: none;
+  font-size: 0.8em;
 }
+
+.sankey-title {
+    pointer-events: none;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+

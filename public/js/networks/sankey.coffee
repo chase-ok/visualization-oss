@@ -35,13 +35,19 @@ exports.majorProgression = (canvas, data) ->
     nodeWidth = 15
     sankey.nodeWidth = property sankey,
         get: -> nodeWidth
+        set: (x) -> nodeWidth = x; relayout()
+
+    nodePadding = 0
+    sankey.nodePadding = property sankey,
+        get: -> nodePadding
+        set: (x) -> nodePadding = x; relayout()
 
     showLabels = yes
     sankey.showLabels = property sankey,
         get: -> showLabels
         set: (x) -> showLabels = x; redrawNodes()
 
-    {nodes, links} = do ->
+    {nodes, links, groups} = do ->
         nodes = []
         makeNode = (group, name, year) -> 
             node = {group, name, year}
@@ -54,6 +60,11 @@ exports.majorProgression = (canvas, data) ->
         firstMajors = toNodes genderToFirst.to, 1
         thirdMajors = toNodes firstToThird.to, 3
         finalMajors = toNodes thirdToFinal.to, 5
+        groups = 
+            'Incoming Students': genders
+            'First-Year Major': firstMajors
+            'Third-Year Major': thirdMajors
+            'Final Major': finalMajors
 
         links = []
         link = (source, target, value) -> 
@@ -67,16 +78,24 @@ exports.majorProgression = (canvas, data) ->
         mappingToLinks genderToFirst, genders, firstMajors
         mappingToLinks firstToThird, firstMajors, thirdMajors
         mappingToLinks thirdToFinal, thirdMajors, finalMajors
-        {nodes, links} 
+        {nodes, links, groups} 
 
-    layout = d3.sankey()
-        .nodeWidth nodeWidth
-        .nodePadding 10
-        .size [$canvas.width(), $canvas.height()]
-        .xScale d3.scale.pow().exponent(1)
-        .nodes nodes
-        .links links
-        .layout 32
+    titleHeight = 40
+
+    layout = null
+    relayout = (shouldRedraw=yes)->
+        layout = d3.sankey()
+            .nodeWidth nodeWidth
+            .nodePadding nodePadding
+            .size [$canvas.width(), 
+                   $canvas.height() - titleHeight]
+            .xScale d3.scale.pow().exponent(1)
+            .nodes nodes
+            .links links
+            .layout 64
+        sankey.redraw() if shouldRedraw
+    relayout(no)
+
     sankey.layout = property sankey,
         get: -> layout
 
@@ -118,7 +137,7 @@ exports.majorProgression = (canvas, data) ->
             .enter()
                 .append 'path'
                 .attr 'class', 'sankey-link'
-                .style 'stroke-width', (d) -> Math.max 1, d.dy
+                .style 'stroke-width', ({dy}) -> Math.max 1, dy
                 .sort (a, b) -> b.dy - a.dy
         svg
             .append 'title'
@@ -128,7 +147,7 @@ exports.majorProgression = (canvas, data) ->
     redrawLinks = ->
         linkSvg
             .attr 'd', layout.link().curvature curvature
-            .style 'stroke-opacity', (d) -> linkOpacity d.dy
+            .style 'stroke-opacity', ({dy}) -> linkOpacity dy
             .style 'stroke', (d) -> 
                 if d.source.group is 'Gender' or d.source.name is d.target.name
                     linkSameColor
@@ -138,7 +157,6 @@ exports.majorProgression = (canvas, data) ->
                 d3.select(this).style 'stroke-opacity', highlightedLinkOpacity
             .on 'mouseout', (d) -> 
                 d3.select(this).style 'stroke-opacity', linkOpacity d.dy
-
 
     doNodeDrag = null
 
@@ -157,14 +175,12 @@ exports.majorProgression = (canvas, data) ->
 
         rect = group.append 'rect'
         rect.append 'title'
-            .text (d) -> "#{d.name}\n#{d.value}%"
+            .text ({name, value}) -> "#{name}\n#{value}%"
 
         text = group
             .append 'text'
             .attr 'dy', '.35em'
-            .attr 'font-size', '0.8em'
-            .attr 'transform', null # do we need this?
-            .text (d) -> d.name
+            .text ({name}) -> name
 
         linkMatches = (node, link) -> 
             link.target is node or link.source is node
@@ -186,18 +202,41 @@ exports.majorProgression = (canvas, data) ->
         nodeSvg.group
             .attr 'transform', (d) -> "translate(#{d.x},#{d.y})"
         nodeSvg.rect
-            .attr 'height', (d) -> d.dy
+            .attr 'height', ({dy}) -> dy
             .attr 'width', nodeWidth
-            .attr 'fill', (d) -> d.color = nodeColor d.name
-            .style 'stroke', (d) -> d3.rgb(d.color).darker(2)
+            .attr 'fill', (d) -> d.color = nodeColor(d.name)
         nodeSvg.text
             .attr 'x', -6
             .attr 'y', (d) -> d.dy/2
             .attr 'text-anchor', 'end'
-            .text (d) -> d.name
-            .filter (d) -> d.x < $canvas.width()/2
+            .text ({name}) -> name
+            .filter ({x}) -> x < $canvas.width()/2
                 .attr 'x', 6 + nodeWidth
                 .attr 'text-anchor', 'start'
+
+    titlesSvg = do ->
+        svg = canvas
+            .append 'g'
+            .attr 'transform', "translate(0,#{$canvas.height()})"
+            .selectAll '.sankey-title'
+            .data d3.entries groups
+            .enter()
+                .append 'text'
+                .attr 'class', 'sankey-title'
+                .text ({key}) -> key
+                .attr 'dy', '-0.3em'
+                .attr 'x', ({value}) -> value[0].x
+                .attr 'text-anchor', 'middle'
+        svg
+            .filter ({value}) -> value[0].x > 0.75*$canvas.width()
+                .attr 'x', ({value}) -> value[0].x + nodeWidth
+                .attr 'text-anchor', 'end'
+        svg
+            .filter ({value}) -> value[0].x < 0.25*$canvas.width()
+                .attr 'x', ({value}) -> value[0].x
+                .attr 'text-anchor', 'start'
+        svg
+
 
     sankey.redraw = ->
         redrawLinks()
