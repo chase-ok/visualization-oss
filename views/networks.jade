@@ -18,16 +18,36 @@ block content
                 .form-group
                     label.col-sm-2.control-label(for='curvature') Curvature
                     .col-sm-10
-                        input#curvature(type='text', data-slider-min=0, data-slider-max=1, data-slider-step=0.01, data-slider-value=0.5)
+                        input#curvature(type='number', data-slider-min=0, data-slider-max=1, data-slider-step=0.01, data-slider-value=0.5)
                 .form-group
                     label.col-sm-2.control-label(for='nodeWidth') Node Width (px)
                     .col-sm-10
-                        input#nodeWidth(type='text', data-slider-min=1, data-slider-max=30, data-slider-step=1, data-slider-value=15)
+                        input#nodeWidth(type='number', data-slider-min=1, data-slider-max=30, data-slider-step=1, data-slider-value=15)
                 .form-group
                     label.col-sm-2.control-label(for='nodePadding') Node Padding (px)
                     .col-sm-10
-                        input#nodePadding(type='text', data-slider-min=0, data-slider-max=30, data-slider-step=1, data-slider-value=0)
+                        input#nodePadding(type='number', data-slider-min=0, data-slider-max=30, data-slider-step=1, data-slider-value=0)
+                .form-group
+                    label.col-sm-2.control-label(for='iterations') Layout Iterations
+                    .col-sm-10
+                        input#iterations(type='number', data-slider-min=0, data-slider-max=128, data-slider-step=1, data-slider-value=64)
                 .form-group
                     label.col-sm-2.control-label(for='showLabels') Labels
                     .col-sm-10
                         input#showLabels(type='checkbox', checked)
+                .form-group
+                    label.col-sm-2.control-label(for='maxLinkOpacity') Max Link Opacity
+                    .col-sm-10
+                        input#maxLinkOpacity(type='number', data-slider-min=0, data-slider-max=1, data-slider-step=0.01, data-slider-value=0.3)
+                .form-group
+                    label.col-sm-2.control-label(for='minLinkOpacity') Min Link Opacity
+                    .col-sm-10
+                        input#minLinkOpacity(type='number', data-slider-min=0, data-slider-max=1, data-slider-step=0.01, data-slider-value=0.01)
+                .form-group
+                    label.col-sm-2.control-label(for='linkOpacityPower') Link Opacity Exponent
+                    .col-sm-10
+                        input#linkOpacityPower(type='number', data-slider-min=0, data-slider-max=2, data-slider-step=0.01, data-slider-value=0.8)
+                .form-group
+                    label.col-sm-2.control-label(for='highlightedLinkOpacity') Highlighted Link Opacity
+                    .col-sm-10
+                        input#highlightedLinkOpacity(type='number', data-slider-min=0, data-slider-max=1, data-slider-step=0.01, data-slider-value=0.7)

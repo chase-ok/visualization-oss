@@ -82,6 +82,11 @@ exports.majorProgression = (canvas, data) ->
         mappingToLinks thirdToFinal, thirdMajors, finalMajors
         {nodes, links, groups} 
 
+    iterations = 64
+    sankey.iterations = property sankey,
+        get: -> iterations
+        set: (x) -> iterations = x; relayout()
+
     titleHeight = 40
 
     layout = null
@@ -94,7 +99,7 @@ exports.majorProgression = (canvas, data) ->
             .xScale d3.scale.pow().exponent(1)
             .nodes nodes
             .links links
-            .layout 64
+            .layout iterations
         sankey.redraw() if shouldRedraw
     relayout(no)
 
@@ -143,7 +148,7 @@ exports.majorProgression = (canvas, data) ->
                 .sort (a, b) -> b.dy - a.dy
         svg
             .append 'title'
-            .text (d) -> "#{d.source.name} → #{d.target.name}\n#{d.value}%"
+            .text (d) -> "#{d.source.name} → #{d.target.name}"
         svg
 
     redrawLinks = ->
@@ -177,7 +182,7 @@ exports.majorProgression = (canvas, data) ->
 
         rect = group.append 'rect'
         rect.append 'title'
-            .text ({name, value}) -> "#{name}\n#{value}%"
+            .text ({name, value}) -> "#{name}"
 
         text = group
             .append 'text'
@@ -258,14 +263,28 @@ redraw = null
 exports.create = (data) ->
     sankey = exports.majorProgression '#sankey-canvas', data
 
-    slider = (selector, format, onSlide) ->
+    slider = (selector, value, formatStr, onSlide) ->
         $ selector
-            .slider({formater: format, tooltip: 'always'})
+            .slider({value, formater: d3.format(formatStr), tooltip: 'show'})
             .on 'slide', ({value}) -> onSlide value
+    propSlider = (selector, prop, formatStr='d') ->
+        slider selector, prop(), formatStr, (x) -> prop(x)
 
-    slider '#curvature', d3.format('.2f'), (x) -> sankey.curvature x
-    slider '#nodeWidth', d3.format('d'), (x) -> sankey.nodeWidth x
-    slider '#nodePadding', d3.format('d'), (x) -> sankey.nodePadding x
+    propSlider '#curvature', sankey.curvature, '.2f'
+    propSlider '#nodeWidth', sankey.nodeWidth
+    propSlider '#nodePadding', sankey.nodePadding
+    propSlider '#iterations', sankey.iterations
 
     $('#showLabels').bootstrapSwitch().on 'switchChange', (e, {value}) ->
         sankey.showLabels value
+
+    slider '#maxLinkOpacity', sankey.linkOpacity().range()[1], '.2f', (x) ->
+        scale = sankey.linkOpacity()
+        sankey.linkOpacity(scale.range [scale.range()[0], x])
+    slider '#minLinkOpacity', sankey.linkOpacity().range()[0], '.2f', (x) ->
+        scale = sankey.linkOpacity()
+        sankey.linkOpacity(scale.range [x, scale.range()[1]])
+    slider '#linkOpacityPower', sankey.linkOpacity().exponent(), '.2f', (x) ->
+        scale = sankey.linkOpacity()
+        sankey.linkOpacity(scale.exponent x)
+    propSlider '#highlightedLinkOpacity', sankey.highlightedLinkOpacity, '.2f'
