@@ -1,6 +1,8 @@
 extends layout
 
 block content
+    link(href='/css/slider.css', rel='stylesheet')
+    link(href='/css/bootstrap-switch.min.css', rel='stylesheet')
     script(src='/js/networks/index.js')
 
     h1 Networks
@@ -8,3 +10,24 @@ block content
     h2 Sankey
     .well.well-lg
         svg#sankey-canvas(height=800)
+
+    .panel.panel-default
+        .panel-heading Parameters
+        .panel-body
+            form.form-horizontal(role='form')
+                .form-group
+                    label.col-sm-2.control-label(for='curvature') Curvature
+                    .col-sm-10
+                        input#curvature(type='text', data-slider-min=0, data-slider-max=1, data-slider-step=0.01, data-slider-value=0.5)
+                .form-group
+                    label.col-sm-2.control-label(for='nodeWidth') Node Width (px)
+                    .col-sm-10
+                        input#nodeWidth(type='text', data-slider-min=1, data-slider-max=30, data-slider-step=1, data-slider-value=15)
+                .form-group
+                    label.col-sm-2.control-label(for='nodePadding') Node Padding (px)
+                    .col-sm-10
+                        input#nodePadding(type='text', data-slider-min=0, data-slider-max=30, data-slider-step=1, data-slider-value=0)
+                .form-group
+                    label.col-sm-2.control-label(for='showLabels') Labels
+                    .col-sm-10
+                        input#showLabels(type='checkbox', checked)

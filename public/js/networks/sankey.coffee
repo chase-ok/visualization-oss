@@ -1,5 +1,7 @@
 
-require './d3-sankey.js'
+require '../lib/d3-sankey.js'
+require '../lib/bootstrap-slider.js'
+require '../lib/bootstrap-switch.min.js'
 
 # based on http://bost.ocks.org/mike/sankey/
 
@@ -206,6 +208,7 @@ exports.majorProgression = (canvas, data) ->
             .attr 'width', nodeWidth
             .attr 'fill', (d) -> d.color = nodeColor(d.name)
         nodeSvg.text
+            .attr 'visibility', if showLabels then 'visible' else 'hidden'
             .attr 'x', -6
             .attr 'y', (d) -> d.dy/2
             .attr 'text-anchor', 'end'
@@ -254,3 +257,15 @@ redraw = null
 
 exports.create = (data) ->
     sankey = exports.majorProgression '#sankey-canvas', data
+
+    slider = (selector, format, onSlide) ->
+        $ selector
+            .slider({formater: format, tooltip: 'always'})
+            .on 'slide', ({value}) -> onSlide value
+
+    slider '#curvature', d3.format('.2f'), (x) -> sankey.curvature x
+    slider '#nodeWidth', d3.format('d'), (x) -> sankey.nodeWidth x
+    slider '#nodePadding', d3.format('d'), (x) -> sankey.nodePadding x
+
+    $('#showLabels').bootstrapSwitch().on 'switchChange', (e, {value}) ->
+        sankey.showLabels value
