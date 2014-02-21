@@ -1,11 +1,22 @@
 
+bps2001 = '/data/college-majors/bps-2001'
+
+exports.loadGenderToFirstMajor = ->
+    parseMapFromCSV "#{bps2001}/gender-to-first-major.csv"
+
+exports.loadFirstMajorToThirdMajor = ->
+    parseMapFromCSV "#{bps2001}/first-major-to-third-major.csv"
+
+exports.loadThirdMajorToFinalMajor = ->
+    parseMapFromCSV "#{bps2001}/third-major-to-final-major.csv"
+
 
 parseMapFromCSV = (csvUrl) ->
     Q $.ajax csvUrl
     .then (file) -> Q d3.csv.parseRows file
     .then (rows) -> Q new RowStack rows
-    .then skipHeader
-    .then parseMap
+    .then (rows) -> Q skipHeader rows
+    .then (rows) -> Q parseMap rows
 
 class RowStack
     constructor: (@rows) -> @index = 0
@@ -52,38 +63,3 @@ parseMap = (rows) ->
         map.to.sizes[category] = +size
 
     Q map
-
-exports.loadGenderToFirstMajor = ->
-    parseMapFromCSV '/data/college-majors/bps-2001/gender-to-first-major.csv'
-
-byMajorCSV = '/data/college-majors/95-96/by-95-96-major12-simple.csv'
-
-exports.loadByMajor = (done) ->
-    $.ajax(byMajorCSV).done (content) -> parseByMajor content, done
-
-parseByMajor = (content, done) ->
-    byMajor = {}
-    rows = d3.csv.parseRows content
-
-    byMajor.headers = rows[0][1..]
-    byMajor.totals = (+total for total in rows[1][1..])
-    byMajor.fields = {}
-    byMajor.total = 3306190 # from xlsx file
-
-    i = 2
-    nextRow = -> i += 1; rows[i-1]
-    hasRow = -> i < rows.length
-
-    groupName = null
-    while hasRow()
-        row = nextRow()
-
-        if not row[0].trim() and hasRow()
-            byMajor.fields[groupName] = group if groupName?
-            groupName = nextRow()[0].trim()
-            group = {}
-            row = nextRow()
-
-        group[row[0].trim()] = (+x.trim() for x in row[1..])
-
-    done byMajor
