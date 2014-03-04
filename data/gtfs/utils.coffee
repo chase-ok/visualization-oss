@@ -18,7 +18,7 @@ exports.getRealtimeProto = (proto) ->
 
 exports.parseDateString = (str, hour=0, minute=0, second=0) ->
     return null unless str
-    new Date str[...4], str[4...6], str[6...8], hour, minute, second
+    new Date str[...4], str[4...6]-1, str[6...8], hour, minute, second
 
 exports.numOrDefault = numOrDefault = (x, def=null) ->
     if _.isNaN x then def else x

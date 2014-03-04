@@ -6,30 +6,43 @@ http2 = require 'http'
 
 
 exports.updateSchema = updateSchema = new mongoose.Schema
-    vehicleId: String
-    tripId: String
-    start: Date
+    vehicleId: 
+        type: String
+        index: yes
+    tripId:
+        type: String
+        index: yes
+    start: 
+        type: Date
+        index: yes
     scheduleRelationship: Number
     lat: Number
     lon: Number
     stopSequence: Number
-    timestamp: Date
+    timestamp: 
+        type: Date
+        index: yes
 
-
+lastUpdate = 0
 readUpdateStream = (model, url) ->
     http.read url
     .then (response) ->
         proto = utils.getRealtimeProto 'FeedMessage'
-        updates = parseUpdateMessage proto.decode response
-        db.batchInsert model, updates
-        console.log "Streamed #{updates.length} updates."
+        {time, updates} = parseUpdateMessage proto.decode response
+        if time > lastUpdate
+            lastUpdate = time
+            db.batchInsert model, updates
+            .then -> console.log "Streamed #{updates.length} updates."
+        else
+            console.log 'No updates'
     .fail (err) -> 
         console.log err
         process.exit()
 
 parseUpdateMessage = (message) ->
     {header, entity} = message
-    parseUpdate(x) for x in entity
+    time: header.timestamp.toNumber()
+    updates: parseUpdate(x) for x in entity
 
 parseUpdate = ({id, vehicle}) ->
     vehicleId: id
