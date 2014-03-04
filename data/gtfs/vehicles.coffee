@@ -5,29 +5,51 @@ http = require 'q-io/http'
 http2 = require 'http'
 
 
-exports.schema = schema = new mongoose.Schema
+exports.updateSchema = updateSchema = new mongoose.Schema
+    vehicleId: String
     tripId: String
     start: Date
     scheduleRelationship: Number
     lat: Number
     lon: Number
-    currentStopSequence: Number
+    stopSequence: Number
     timestamp: Date
 
 
-readStream = (url) ->
+readUpdateStream = (model, url) ->
     http.read url
     .then (response) ->
         proto = utils.getRealtimeProto 'FeedMessage'
-        parseMessage proto.decode response
-    .fail (err) -> console.log err
+        updates = parseUpdateMessage proto.decode response
+        db.batchInsert model, updates
+        console.log "Streamed #{updates.length} updates."
+    .fail (err) -> 
+        console.log err
+        process.exit()
 
-
-parseMessage = (message) ->
+parseUpdateMessage = (message) ->
     {header, entity} = message
+    parseUpdate(x) for x in entity
 
+parseUpdate = ({id, vehicle}) ->
+    vehicleId: id
+    tripId: vehicle.trip?.trip_id
+    start: utils.parseDateString vehicle.trip?.start_date
+    scheduleRelationship: vehicle.trip?.schedule_relationship
+    lat: vehicle.position?.latitude
+    lon: vehicle.position?.longitude
+    stopSequence: vehicle.current_stop_sequence
+    timestamp: 
+        if vehicle.timestamp? then new Date vehicle.timestamp.toNumber()*1000
+        else null
+
+exports.pollUpdateStream = (prefix, url, interval=30*1000) ->
+    model = mongoose.model "#{prefix}VehicleUpdate", updateSchema
+    poll = -> readUpdateStream model, url
+    setInterval poll, interval
 
 
 if require.main is module
-    readStream 'http://developer.mbta.com/lib/gtrtfs/Vehicles.pb'
-    .done -> process.exit()
+    db.connect()
+    .then -> exports.pollUpdateStream 'Mbta', 
+             'http://developer.mbta.com/lib/gtrtfs/Vehicles.pb'

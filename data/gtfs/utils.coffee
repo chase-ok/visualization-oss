@@ -14,9 +14,13 @@ exports.getRealtimeProto = (proto) ->
     if not realtime?
         file = "#{exports.gtfsDir}/gtfs-realtime.proto"
         realtime = ProtoBuf.loadProtoFile(file).build 'transit_realtime'
-    return realtime[message]
+    return realtime[proto]
 
-numOrDefault = (x, def) ->
+exports.parseDateString = (str, hour=0, minute=0, second=0) ->
+    return null unless str
+    new Date str[...4], str[4...6], str[6...8], hour, minute, second
+
+exports.numOrDefault = numOrDefault = (x, def=null) ->
     if _.isNaN x then def else x
 
 exports.intField = (col, def=null) ->
