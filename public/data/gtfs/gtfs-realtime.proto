@@ -1,6 +1,3 @@
-
-<!-- saved from url=(0071)https://developers.google.com/transit/gtfs-realtime/gtfs-realtime.proto -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><script>window["_GOOG_TRANS_EXT_VER"] = "1";</script><style type="text/css"></style></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">// Copyright 2011 Google Inc
 //
 // The content of this file is licensed under the Creative Commons Attribution
 // 3.0 License.
@@ -552,5 +549,3 @@ message TranslatedString {
   // At least one translation must be provided.
   repeated Translation translation = 1;
 }
-
-</pre></body></html>
