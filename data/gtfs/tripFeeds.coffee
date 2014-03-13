@@ -14,7 +14,7 @@ exports.updateSchema = updateSchema = new mongoose.Schema
         index: yes
     scheduleRelationship: Number
     stopSequence: Number
-    delay: 
+    delay:
         type: Number
         index: yes
 
@@ -32,7 +32,6 @@ readUpdateStream = (model, url) ->
             console.log 'No updates'
     .fail (err) -> 
         console.log err
-        process.exit()
 
 parseUpdateMessage = (message) ->
     {header, entity} = message

@@ -11,13 +11,14 @@ execAndLog = (cmd, done) ->
     done? err
 
 publicJs = 'public/js'
+clientJs = 'client/js'
 
 makeBrowserifyArgs = (pack) ->
-  "#{publicJs}/#{pack}/index.coffee --debug
+  "#{clientJs}/#{pack}/index.coffee --debug
    --transform node_modules/coffeeify
-   -o #{publicJs}/#{pack}/index.js"
+   -o #{publicJs}/#{pack}.js"
 
-browserifyDirs = ['networks']
+browserifyDirs = ['networks', 'gtfs']
 
 for dir in browserifyDirs
   do (dir) -> 
@@ -26,10 +27,6 @@ for dir in browserifyDirs
     task "watch:#{dir}", ->
       execAndLog "watchify #{makeBrowserifyArgs dir}"
 
-# for sublime 3
-task 'sbuild', ->
-  for dir in browserifyDirs
-    execAndLog "browserify #{makeBrowserifyArgs dir}"
 
 vendorDir = 'client/js/vendor'
 vendorLibs = [ # need to specify in order for deps
@@ -45,10 +42,14 @@ bundleVendorLibs = ->
               -c -e -m
               -o #{publicJs}/vendor.js 
               --source-map #{publicJs}/vendor.map 
-              --source-map-url /javascripts/vendor.map
+              --source-map-url /js/vendor.map
               --source-map-include-sources
               --screw-ie8"
 task 'build:vendor', 'Bundle vendor js libraries', bundleVendorLibs
+
+# for sublime 3
+task 'sbuild', ->
+  execAndLog "browserify #{makeBrowserifyArgs 'gtfs'}"
 
 task 'server', 'Starts the node server', ->
   execAndLog 'coffee app.coffee --nodejs'

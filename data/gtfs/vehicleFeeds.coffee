@@ -37,7 +37,6 @@ readUpdateStream = (model, url) ->
             console.log 'No updates'
     .fail (err) -> 
         console.log err
-        process.exit()
 
 parseUpdateMessage = (message) ->
     {header, entity} = message

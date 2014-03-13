@@ -1,0 +1,14 @@
+extends layout
+
+block content
+    link(href='/css/slider.css', rel='stylesheet')
+    link(href='/css/bootstrap-switch.min.css', rel='stylesheet')
+    script(src='/js/gtfs/index.js')
+
+    h1 GTFS
+
+    h2 Variability Map
+    .well.well-lg
+        svg#variability-canvas(height=800)
+
+   

@@ -1,8 +1,4 @@
 
-require '../lib/d3-sankey.js'
-require '../lib/bootstrap-slider.js'
-require '../lib/bootstrap-switch.min.js'
-
 # based on http://bost.ocks.org/mike/sankey/
 
 property = (self, {get, set}) -> (x) ->
