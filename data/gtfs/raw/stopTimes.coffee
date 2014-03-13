@@ -1,5 +1,5 @@
 
-{mongoose} = db = require '../db'
+{mongoose} = db = require '../../db'
 csv = require 'csv'
 utils = require './utils'
 Q = require 'Q'

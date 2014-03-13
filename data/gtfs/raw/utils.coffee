@@ -1,6 +1,6 @@
 
 _ = require 'underscore'
-{mongoose} = db = require '../db'
+{mongoose} = db = require '../../db'
 csv = require 'csv'
 Q = require 'q'
 fs = require 'fs'

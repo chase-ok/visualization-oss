@@ -18,8 +18,7 @@ if app.get('env') is 'development'
   middleware.push express.errorHandler()
 app.use ware for ware in middleware
 
-app.get '/networks', (req, res) -> res.render 'networks'
-app.get '/gtfs', (req, res) -> res.render 'gtfs'
+require('./routes').create app
 
 http.createServer(app).listen app.get('port'), ->
     console.log "Express server listening on port #{app.get 'port'}"

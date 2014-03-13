@@ -1,4 +1,4 @@
-{mongoose} = db = require '../db'
+{mongoose} = db = require '../../db'
 utils = require './utils'
 Q = require 'Q'
 http = require 'q-io/http'
