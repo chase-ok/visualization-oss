@@ -19,8 +19,10 @@ exports.schema = schema = utils.buildCsvSchema fields
 schema.index {routeId: 1}, {unique: yes}
 
 exports.load = (prefix, baseDir) ->
-    model = mongoose.model "#{prefix}Route", schema
+    model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/routes.txt"
+
+exports.getModel = (prefix) -> mongoose.model "#{prefix}Route", schema
 
 if require.main is module
     db.connect()

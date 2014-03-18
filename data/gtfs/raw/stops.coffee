@@ -20,8 +20,10 @@ exports.schema = schema = utils.buildCsvSchema fields
 schema.index {stopId: 1} #, {unique: yes} --- parent stations
 
 exports.load = (prefix, baseDir) ->
-    model = mongoose.model "#{prefix}Stop", schema
+    model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/stops.txt"
+
+exports.getModel = (prefix) -> mongoose.model "#{prefix}Stop", schema
 
 if require.main is module
     db.connect()

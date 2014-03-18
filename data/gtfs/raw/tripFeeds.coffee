@@ -17,6 +17,7 @@ exports.updateSchema = updateSchema = new mongoose.Schema
     delay:
         type: Number
         index: yes
+updateSchema.index {tripId: 1, stopSequence: 1}
 
 lastUpdate = 0
 readUpdateStream = (model, url) ->
@@ -51,10 +52,12 @@ parseUpdate = ({id, trip_update}) ->
     delay: stopTime?.arrival?.delay
 
 exports.pollUpdateStream = (prefix, url, interval=30*1000) ->
-    model = mongoose.model "#{prefix}TripUpdate", updateSchema
+    model = exports.getUpdateModel prefix
     poll = -> readUpdateStream model, url
     setInterval poll, interval
 
+exports.getUpdateModel = (prefix) -> 
+    mongoose.model "#{prefix}TripUpdate", updateSchema
 
 if require.main is module
     db.connect()

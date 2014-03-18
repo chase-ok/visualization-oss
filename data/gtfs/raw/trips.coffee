@@ -20,8 +20,10 @@ schema.index {tripId: 1}, {unique: yes}
 schema.index {blockId: 1}
 
 exports.load = (prefix, baseDir) ->
-    model = mongoose.model "#{prefix}Trip", schema
+    model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/trips.txt"
+
+exports.getModel = (prefix) -> mongoose.model "#{prefix}Trip", schema
 
 if require.main is module
     db.connect()

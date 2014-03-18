@@ -28,3 +28,27 @@ exports.batchInsert = (model, docs, batchSize=2048) ->
             Q.ninvoke model.collection, 'insert', batch, {w: 1}
             .fail (err) -> console.log err
     promise
+
+exports.batchStream = (query, batchSize, onBatch) ->
+    deferred = Q.defer()
+
+    stream = query.stream()
+    batch = []
+
+    stream
+    .on 'error', (error) -> deferred.reject error
+    .on 'close', ->
+        (if batch.length > 0 then onBatch batch else Q())
+        .then -> deferred.resolve()
+    .on 'data', (doc) ->
+        batch.push doc
+        if batch.length >= batchSize
+            stream.pause()
+            onBatch batch
+            .done -> 
+                batch = []
+                stream.resume()
+
+    deferred.promise
+
+

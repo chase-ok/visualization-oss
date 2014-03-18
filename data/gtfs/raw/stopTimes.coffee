@@ -33,8 +33,10 @@ schema.index {stopId: 1, arrival: 1, depature: 1}
 schema.index {departure: 1}
 
 exports.load = (prefix, baseDir) ->
-    model = mongoose.model "#{prefix}StopTime", schema
+    model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/stop_times.txt"
+
+exports.getModel = (prefix) -> mongoose.model "#{prefix}StopTime", schema
 
 if require.main is module
     db.connect()
