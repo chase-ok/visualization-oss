@@ -9,23 +9,12 @@ utils = require './utils'
 Q = require 'q'
 
 
-exports.analyze = (prefix) ->
-    schema = new mongoose.Schema
-        #stop: utils.makeRef "#{prefix}Stop"
-        #trip: utils.makeRef "#{prefix}Trip"
-        #route: utils.makeRef "#{prefix}Route"
-        stopId: {type: String, index: yes}
-        tripId: {type: String, index: yes}
-        routeId: {type: String, index: yes}
-        sequence: Number
-        scheduledTime: Number
-        delays: [Number]
-    Delay = mongoose.model "#{prefix}Delay", schema
+exports.analyzeByStop = (prefix) ->
+    StopDelay = exports.getStopDelayModel prefix
 
     StopTime = stopTimes.getModel prefix
     Stop = stops.getModel prefix
     Trip = trips.getModel prefix
-    Route = routes.getModel prefix
 
     createEmpties = ->
         findRoute = (time) ->
@@ -51,7 +40,7 @@ exports.analyze = (prefix) ->
             count += times.length
             console.log count
             Q.all (processTime time for time in times)
-            .then (delays) -> db.batchInsert Delay, delays, 2400
+            .then (delays) -> db.batchInsert StopDelay, delays, 2400
 
     TripUpdate = tripFeeds.getUpdateModel prefix
 
@@ -61,32 +50,148 @@ exports.analyze = (prefix) ->
                 .aggregate()
                 .match {tripId: delay.tripId, stopSequence: delay.sequence}
                 .group {_id: "$start", delay: {$last: "$delay"}}
+                .project {_id: 0, day: "$_id", delay: 1}
             Q.ninvoke agg, 'exec'
 
         processDelay = (delayObj) ->
             getMatchingUpdates delayObj
             .catch (err) -> console.log err
-            .then (updates) ->
-                return Q() unless updates.length > 0
-                console.log updates.length, delayObj.delays
-                delayObj.delays = (update.delay for update in updates)
+            .then (delays) ->
+                return Q() unless delays.length > 0
+                delayObj.delays = delays
                 delayObj.saveQ()
 
         count = 0
-        db.batchStream Delay.find().populate('trip'), 64, (delays) ->
+        db.batchStream StopDelay.find().populate('trip'), 64, (delays) ->
             count += delays.length
             console.log count
             Q.all (processDelay delay for delay in delays)
 
-
-    #db.dropModel Delay
+    #db.dropModel StopDelay
     #.then createEmpties
     Q()
     .then findUpdates
-    .done()
+
+exports.getStopDelayModel = (prefix) ->
+    schema = new mongoose.Schema
+        stopId: {type: String, index: yes}
+        tripId: {type: String, index: yes}
+        routeId: {type: String, index: yes}
+        sequence: Number
+        scheduledTime: Number
+        delays: [{day: Date, delay: Number}]
+    mongoose.model "#{prefix}StopDelay", schema
+
+
+exports.analyzeByTrip = (prefix) ->
+    TripDelay = exports.getTripDelayModel prefix
+    StopDelay = exports.getStopDelayModel prefix
+    TripUpdate = tripFeeds.getUpdateModel prefix
+    Trip = trips.getModel prefix
+    Stop = stops.getModel prefix
+
+    db.dropModel TripDelay
+    .then ->
+        findStopDelaysByDay = (trip) ->
+            agg = StopDelay.aggregate()
+                .match {tripId: trip.tripId}
+                .sort 'sequence'
+                .unwind 'delays'
+                .group
+                    _id: '$delays.day'
+                    delays: $push: 
+                        sequence: '$sequence' 
+                        delay: '$delays.delay'
+                .project {day: '$_id', delays: 1, _id: 0}
+                .sort 'day'
+            Q.ninvoke agg, 'exec'
+
+        findMeanStopDelays = (trip) ->
+            agg = StopDelay.aggregate()
+                .match {tripId: trip.tripId}
+                .unwind 'delays'
+                .group 
+                    _id: '$sequence'
+                    delay: {$avg: '$delays.delay'}
+                .sort '_id'
+                .project {sequence: '$_id', delay: 1, _id: 0}
+            Q.ninvoke agg, 'exec'
+
+        processTrip = (trip) ->
+            Q.spread [findStopDelaysByDay(trip),
+                      findMeanStopDelays(trip)],
+            (byDay, mean) -> Q
+                tripId: trip.tripId
+                routeId: trip.routeId
+                serviceId: trip.serviceId
+                shapeId: trip.shapeId
+                delaysByDay: byDay
+                meanDelays: mean
+
+        count = 0
+        db.batchStream Trip.find(), 16, (trips) ->
+            count += trips.length
+            console.log count
+            Q.all (processTrip trip for trip in trips)
+            .then (delays) -> db.batchInsert TripDelay, delays, 20
+
+exports.getTripDelayModel = (prefix) ->
+    schema = new mongoose.Schema
+        tripId: {type: String, index: yes}
+        routeId: {type: String, index: yes}
+        serviceId: String
+        shapeId: String
+        delaysByDay: [{day: Date, delays: [{sequence: Number, delay: Number}]}]
+        meanDelays: [{sequence: Number, delay: Number}]
+    mongoose.model "#{prefix}TripDelay", schema
+
+
+exports.streamTripDelaySequences = (prefix) ->
+    {EventEmitter} = require 'events'
+    emitter = new EventEmitter()
+
+    stream = exports.getTripDelayModel prefix
+        .find({})
+        .select('delaysByDay -_id')
+        .stream()
+
+    stream.on 'error', (error) -> emitter.emit 'error', error
+    stream.on 'close', -> emitter.emit 'close'
+    stream.on 'data', (tripDelay) ->
+        for {delays} in tripDelay.delaysByDay
+            emitter.emit 'data', delays
+
+    emitter
+
+exports.dumpTripDelaySequences = (prefix, path) -> utils.defer (promise) ->
+    fs = require 'fs'
+    zlib = require 'zlib'
+
+    sequences = exports.streamTripDelaySequences prefix
+    output = zlib.createGzip()
+    output.pipe fs.createWriteStream path
+
+    sequences.on 'error', (error) -> promise.reject error
+    sequences.on 'close', ->
+        output.end ']}', -> promise.resolve()
+
+    output.write '{"sequences":['
+    sequences.on 'data', (day) ->
+        points = ([sequence, delay] for {sequence, delay} in day)
+        output.write JSON.stringify points
+
+
 
 if require.main is module
-    db.connect()
-    .then -> console.log 'connected'
-    .then -> exports.analyze 'Mbta'
+    #db.connect()
+    #.then -> console.log 'connected'
+    #.then -> exports.analyzeByStop 'Mbta'
+    #.then -> exports.analyzeByTrip 'Mbta'
     #.done -> process.exit()
+
+    db.connect()
+    .then -> 
+        path = 'public/data/gtfs/analysis/mbta-trip-sequences.json.gz'
+        exports.dumpTripDelaySequences 'Mbta', path
+    .done -> process.exit()
+
