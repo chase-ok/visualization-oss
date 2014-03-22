@@ -161,26 +161,57 @@ exports.streamTripDelaySequences = (prefix) ->
         for {delays} in tripDelay.delaysByDay
             emitter.emit 'data', delays
 
+    emitter.pause = -> stream.pause()
+    emitter.resume = -> stream.resume()
+
     emitter
 
-exports.dumpTripDelaySequences = (prefix, path) -> utils.defer (promise) ->
+exports.streamTripMeanDelaySequences = (prefix) ->
+    {EventEmitter} = require 'events'
+    emitter = new EventEmitter()
+
+    stream = exports.getTripDelayModel prefix
+        .find({})
+        .select('meanDelays -_id')
+        .stream()
+
+    stream.on 'error', (error) -> emitter.emit 'error', error
+    stream.on 'close', -> emitter.emit 'close'
+    stream.on 'data', ({meanDelays}) -> 
+        emitter.emit 'data', meanDelays if meanDelays.length > 0
+
+    emitter.pause = -> stream.pause()
+    emitter.resume = -> stream.resume()
+
+    emitter
+
+dumpDelaySequence = (stream, path) -> utils.defer (promise) ->
     fs = require 'fs'
     zlib = require 'zlib'
 
-    sequences = exports.streamTripDelaySequences prefix
-    output = zlib.createGzip()
-    output.pipe fs.createWriteStream path
+    output = fs.createWriteStream path
 
-    sequences.on 'error', (error) -> promise.reject error
-    sequences.on 'close', ->
-        output.end ']}', -> promise.resolve()
+    stream.on 'error', (error) -> console.log error; promise.reject error
+    stream.on 'close', -> output.end ']}', -> promise.resolve()
 
     output.write '{"sequences":['
-    sequences.on 'data', (day) ->
-        points = ([sequence, delay] for {sequence, delay} in day)
-        output.write JSON.stringify points
+    first = yes
+    stream.on 'data', (delays) ->
+        if first then first = no
+        else output.write ','
 
+        points = ([sequence, delay] for {sequence, delay} in delays)
+        if not output.write JSON.stringify points
+            stream.pause()
+            output.once 'drain', -> stream.resume()
 
+exports.dumpTripDelaySequences = (prefix, path) -> 
+    sequences = exports.streamTripDelaySequences prefix
+    dumpDelaySequence sequences, path
+
+exports.dumpTripMeanDelaySequences = (prefix, path) -> 
+    sequences = exports.streamTripMeanDelaySequences prefix
+    dumpDelaySequence sequences, path
 
 if require.main is module
     #db.connect()
@@ -189,9 +220,15 @@ if require.main is module
     #.then -> exports.analyzeByTrip 'Mbta'
     #.done -> process.exit()
 
+    # TODO: have to memoize the results of get model
+
+    dir = 'public/data/gtfs/analysis'
     db.connect()
-    .then -> 
-        path = 'public/data/gtfs/analysis/mbta-trip-sequences.json.gz'
-        exports.dumpTripDelaySequences 'Mbta', path
+    #.then -> 
+    #    path = "#{dir}/mbta-trip-sequences.json"
+    #    exports.dumpTripDelaySequences 'Mbta', path
+    .then ->
+        path = "#{dir}/mbta-mean-trip-sequences.json"
+        exports.dumpTripMeanDelaySequences 'Mbta', path
     .done -> process.exit()
 

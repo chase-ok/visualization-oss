@@ -1,0 +1,29 @@
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.data-line {
+  fill: none;
+  stroke-width: 1px;
+  stroke-opacity: 10%;
+}
+
+.delay-increasing {
+  stroke: red;
+}
+
+.delay-decreasing {
+  stroke: green;
+}
+
+.delay-unchanging {
+  stroke: grey;
+}
