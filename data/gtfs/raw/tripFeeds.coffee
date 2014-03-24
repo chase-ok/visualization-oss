@@ -3,7 +3,7 @@ utils = require './utils'
 Q = require 'Q'
 http = require 'q-io/http'
 http2 = require 'http'
-
+{memoizeUnary} = require '../../utils'
 
 exports.updateSchema = updateSchema = new mongoose.Schema
     tripId:
@@ -56,7 +56,7 @@ exports.pollUpdateStream = (prefix, url, interval=30*1000) ->
     poll = -> readUpdateStream model, url
     setInterval poll, interval
 
-exports.getUpdateModel = (prefix) -> 
+exports.getUpdateModel = memoizeUnary (prefix) -> 
     mongoose.model "#{prefix}TripUpdate", updateSchema
 
 if require.main is module

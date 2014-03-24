@@ -217,13 +217,8 @@ plotGrid = ({stops, delays, grid}, canvasSelector='#trip-delay-sequences') ->
                 .range [0, size.x]
         y: 
             d3.scale.linear()
-                .domain [maxDelay+1, minDelay]
+                .domain [minDelay, maxDelay+1]
                 .range [size.y, 0]
-        opacity:
-            d3.scale.pow()
-                .exponent 0.01
-                .domain d3.extent cells, (c) -> c.delayDeltas.length
-                .range [0, 1]
         change:
             d3.scale.threshold()
                 .domain [-0.99, 0.99]
@@ -231,8 +226,8 @@ plotGrid = ({stops, delays, grid}, canvasSelector='#trip-delay-sequences') ->
 
     svgCells = do ->
         svgLine = d3.svg.line()
-            .x (p) -> scales.x p[0]
-            .y (p) -> scales.y p[1]
+            .x (p) -> Math.round scales.x p[0]
+            .y (p) -> Math.round scales.y p[1]
 
         svgCells = canvas.append 'g'
             .selectAll '.data-cell'
@@ -241,11 +236,15 @@ plotGrid = ({stops, delays, grid}, canvasSelector='#trip-delay-sequences') ->
         meanDelay = (cell) ->
             if cell.delayDeltas.length is 0 then 0
             else cell.delaySum/cell.delayDeltas.length
+
+        reflectedMean = (cell) ->
+            mean = meanDelay cell
+            if cell.delay is 0 then mean else mean*sign(cell.delay)
         
         svgCells.enter().append 'path'
             .attr 'class', (cell) ->
-                "data-cell delay-#{scales.change meanDelay cell}"
-            .attr 'opacity', (cell) -> scales.opacity cell.delayDeltas.length
+                "data-cell delay-#{scales.change reflectedMean cell}"
+            .attr 'opacity', (cell) -> sign cell.delayDeltas.length
             .attr 'd', (cell) -> svgLine switch scales.change meanDelay cell
                 when 'increasing' 
                     [[cell.stop, cell.delay]

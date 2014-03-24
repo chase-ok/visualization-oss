@@ -46,7 +46,7 @@ exports.batchStream = (query, batchSize, onBatch) ->
             stream.pause()
             onBatch batch
             .done -> 
-                batch = []
+                batch.length = 0
                 stream.resume()
 
     deferred.promise

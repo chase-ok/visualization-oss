@@ -1,5 +1,5 @@
 
-{mongoose} = db = require '../../db'
+{mongoose} = db = require './db'
 Q = require 'q'
 
 exports.makeRef = (collectionName) ->
@@ -13,3 +13,10 @@ exports.defer = (block) ->
     catch error
         deferred.reject error
     deferred.promise
+
+exports.memoizeUnary = (func, hash=(x)->"#{x}") ->
+    cache = {}
+    (x) ->
+        key = hash x
+        if key of cache then cache[key] 
+        else cache[key] = func x

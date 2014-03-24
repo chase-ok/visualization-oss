@@ -3,7 +3,7 @@ utils = require './utils'
 Q = require 'Q'
 http = require 'q-io/http'
 http2 = require 'http'
-
+{memoizeUnary} = require '../../utils'
 
 exports.updateSchema = updateSchema = new mongoose.Schema
     vehicleId: 
@@ -56,12 +56,15 @@ parseUpdate = ({id, vehicle}) ->
         else null
 
 exports.pollUpdateStream = (prefix, url, interval=30*1000) ->
-    model = mongoose.model "#{prefix}VehicleUpdate", updateSchema
+    model = exports.getUpdateModel prefix
     poll = -> readUpdateStream model, url
     setInterval poll, interval
 
+exports.getUpdateModel = memoizeUnary (prefix) ->
+    mongoose.model "#{prefix}VehicleUpdate", updateSchema
 
 if require.main is module
     db.connect()
     .then -> exports.pollUpdateStream 'Mbta', 
              'http://developer.mbta.com/lib/gtrtfs/Vehicles.pb'
+

@@ -14,13 +14,13 @@ body {
   fill: none;
   stroke-width: 1px;
   stroke-opacity: 10%;
-  stroke-rendering: crispEdges;
 }
 
 .data-cell {
   fill: none;
-  stroke-width: 3px;
+  stroke-width: 2px;
   stroke-linecap: square;
+  stroke-rendering: crispEdges;
 }
 
 .delay-increasing {

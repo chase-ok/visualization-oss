@@ -3,7 +3,7 @@
 csv = require 'csv'
 utils = require './utils'
 Q = require 'Q'
-
+{memoizeUnary} = require '../../utils'
 
 parseTime = (x) ->
     return null unless x
@@ -36,7 +36,8 @@ exports.load = (prefix, baseDir) ->
     model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/stop_times.txt"
 
-exports.getModel = (prefix) -> mongoose.model "#{prefix}StopTime", schema
+exports.getModel = memoizeUnary (prefix) -> 
+    mongoose.model "#{prefix}StopTime", schema
 
 if require.main is module
     db.connect()

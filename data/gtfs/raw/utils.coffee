@@ -6,7 +6,7 @@ Q = require 'q'
 fs = require 'fs'
 ProtoBuf = require 'protobufjs'
 
-exports.gtfsDir = "#{__dirname}/../../public/data/gtfs"
+exports.gtfsDir = "#{__dirname}/../../../public/data/gtfs"
 exports.mbtaDir = "#{exports.gtfsDir}/mbta"
 
 realtime = null

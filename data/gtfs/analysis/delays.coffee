@@ -5,7 +5,7 @@ stopTimes = require '../raw/stopTimes'
 trips = require '../raw/trips'
 tripFeeds = require '../raw/tripFeeds'
 routes = require '../raw/routes'
-utils = require './utils'
+utils = require '../../utils'
 Q = require 'q'
 
 
@@ -55,24 +55,22 @@ exports.analyzeByStop = (prefix) ->
 
         processDelay = (delayObj) ->
             getMatchingUpdates delayObj
-            .catch (err) -> console.log err
             .then (delays) ->
                 return Q() unless delays.length > 0
                 delayObj.delays = delays
                 delayObj.saveQ()
 
         count = 0
-        db.batchStream StopDelay.find().populate('trip'), 64, (delays) ->
+        db.batchStream StopDelay.find().populate('trip'), 32, (delays) ->
             count += delays.length
             console.log count
             Q.all (processDelay delay for delay in delays)
 
-    #db.dropModel StopDelay
-    #.then createEmpties
-    Q()
+    db.dropModel StopDelay
+    .then createEmpties
     .then findUpdates
 
-exports.getStopDelayModel = (prefix) ->
+exports.getStopDelayModel = utils.memoizeUnary (prefix) ->
     schema = new mongoose.Schema
         stopId: {type: String, index: yes}
         tripId: {type: String, index: yes}
@@ -135,7 +133,7 @@ exports.analyzeByTrip = (prefix) ->
             Q.all (processTrip trip for trip in trips)
             .then (delays) -> db.batchInsert TripDelay, delays, 20
 
-exports.getTripDelayModel = (prefix) ->
+exports.getTripDelayModel = utils.memoizeUnary (prefix) ->
     schema = new mongoose.Schema
         tripId: {type: String, index: yes}
         routeId: {type: String, index: yes}
@@ -201,9 +199,10 @@ dumpDelaySequence = (stream, path) -> utils.defer (promise) ->
         else output.write ','
 
         points = ([sequence, delay] for {sequence, delay} in delays)
-        if not output.write JSON.stringify points
-            stream.pause()
-            output.once 'drain', -> stream.resume()
+        output.write JSON.stringify points
+        #if not output.write JSON.stringify points
+        #    stream.pause()
+        #    output.once 'drain', -> stream.resume()
 
 exports.dumpTripDelaySequences = (prefix, path) -> 
     sequences = exports.streamTripDelaySequences prefix
@@ -213,22 +212,25 @@ exports.dumpTripMeanDelaySequences = (prefix, path) ->
     sequences = exports.streamTripMeanDelaySequences prefix
     dumpDelaySequence sequences, path
 
+exports.
+
 if require.main is module
-    #db.connect()
-    #.then -> console.log 'connected'
-    #.then -> exports.analyzeByStop 'Mbta'
-    #.then -> exports.analyzeByTrip 'Mbta'
-    #.done -> process.exit()
+    ###db.connect()
+    .then -> console.log 'connected'
+    .then -> exports.analyzeByStop 'Mbta'
+    .then -> exports.analyzeByTrip 'Mbta'
+    .done -> process.exit()
+    ###
 
     # TODO: have to memoize the results of get model
 
     dir = 'public/data/gtfs/analysis'
     db.connect()
-    #.then -> 
-    #    path = "#{dir}/mbta-trip-sequences.json"
-    #    exports.dumpTripDelaySequences 'Mbta', path
-    .then ->
-        path = "#{dir}/mbta-mean-trip-sequences.json"
-        exports.dumpTripMeanDelaySequences 'Mbta', path
+    .then -> 
+        path = "#{dir}/mbta-trip-sequences.json"
+        exports.dumpTripDelaySequences 'Mbta', path
+    #.then ->
+    #    path = "#{dir}/mbta-mean-trip-sequences.json"
+    #    exports.dumpTripMeanDelaySequences 'Mbta', path
     .done -> process.exit()
 

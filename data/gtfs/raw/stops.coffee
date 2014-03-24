@@ -3,6 +3,7 @@
 csv = require 'csv'
 utils = require './utils'
 Q = require 'Q'
+{memoizeUnary} = require '../../utils'
 
 fields =
     stopId: 'stop_id'
@@ -23,7 +24,8 @@ exports.load = (prefix, baseDir) ->
     model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/stops.txt"
 
-exports.getModel = (prefix) -> mongoose.model "#{prefix}Stop", schema
+exports.getModel = memoizeUnary (prefix) -> 
+    mongoose.model "#{prefix}Stop", schema
 
 if require.main is module
     db.connect()

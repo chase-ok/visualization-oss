@@ -2,6 +2,7 @@
 express = require 'express'
 http = require 'http'
 path = require 'path'
+db = require './data/db'
 
 app = express()
 app.set 'port', process.env.PORT or 5000
@@ -22,3 +23,4 @@ require('./routes').create app
 
 http.createServer(app).listen app.get('port'), ->
     console.log "Express server listening on port #{app.get 'port'}"
+    db.connect().done -> console.log 'Connected to database'
