@@ -33,3 +33,4 @@ exports.create = (app) ->
     app.get '/gtfs', (req, res) -> res.render 'gtfs'
     app.get '/gtfs/:agency/routes', getRoutes
     app.get '/gtfs/:agency/trips', getTrips
+    app.get '/gtfs-map', (req, res) -> res.render 'gtfs-map'

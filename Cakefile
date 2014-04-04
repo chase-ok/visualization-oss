@@ -18,7 +18,7 @@ makeBrowserifyArgs = (pack) ->
    --transform node_modules/coffeeify
    -o #{publicJs}/#{pack}.js"
 
-browserifyDirs = ['networks', 'gtfs']
+browserifyDirs = ['networks', 'gtfs', 'gtfs-map']
 
 for dir in browserifyDirs
   do (dir) -> 
@@ -31,7 +31,7 @@ for dir in browserifyDirs
 vendorDir = 'client/js/vendor'
 vendorLibs = [ # need to specify in order for deps
   'jquery', 
-  'd3', 'd3-sankey'
+  'd3', 'd3-sankey', 'topojson', 'tile',
   'q', 'underscore'
   'bootstrap', 'bootstrap-switch', 'bootstrap-slider', 'bootstrap-colorpicker'
 ]
@@ -49,7 +49,7 @@ task 'build:vendor', 'Bundle vendor js libraries', bundleVendorLibs
 
 # for sublime 3
 task 'sbuild', ->
-  execAndLog "browserify #{makeBrowserifyArgs 'gtfs'}"
+  execAndLog "browserify #{makeBrowserifyArgs 'gtfs-map'}"
 
 task 'server', 'Starts the node server', ->
   execAndLog 'coffee app.coffee --nodejs'
