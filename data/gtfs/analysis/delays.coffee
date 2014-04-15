@@ -76,7 +76,7 @@ exports.getStopDelayModel = utils.memoizeUnary (prefix) ->
         tripId: {type: String, index: yes}
         routeId: {type: String, index: yes}
         sequence: Number
-        scheduledTime: Number
+        scheduledTime: {type: Number, index: yes}
         delays: [{day: Date, delay: Number}]
     mongoose.model "#{prefix}StopDelay", schema
 
@@ -212,7 +212,47 @@ exports.dumpTripMeanDelaySequences = (prefix, path) ->
     sequences = exports.streamTripMeanDelaySequences prefix
     dumpDelaySequence sequences, path
 
-exports.
+exports.dumpStopDelays = (prefix, path, start=(12+5)*60*60, duration=30*60) ->
+    end = start + duration
+    Stop = stops.getModel prefix
+    fs = require 'fs'
+
+    query = exports.getStopDelayModel prefix
+        .aggregate()
+        .match 
+            scheduledTime: 
+                $gte: start
+                $lte: end
+        .unwind 'delays'
+        .group
+            _id: '$stopId'
+            meanDelay: $avg: '$delays.delay'
+        .project
+            stopId: '$_id'
+            meanDelay: 1
+            _id: 0
+    Q.ninvoke query, 'exec'
+    .then (delays) ->
+        queries = []
+        for delay in delays
+            queries.push(Stop
+                .findOne {stopId: delay.stopId}
+                .select 'lat lon -_id'
+                .execQ())
+
+        Q.all queries
+        .then (stops) ->
+            data = []
+            for stop, i in stops
+                data.push
+                    delay: delays[i].meanDelay
+                    lat: stop.lat
+                    lon: stop.lon
+            Q data
+    .then (data) ->
+        fs.writeFileSync path, JSON.stringify
+            delays: data
+
 
 if require.main is module
     ###db.connect()
@@ -224,6 +264,7 @@ if require.main is module
 
     # TODO: have to memoize the results of get model
 
+    ###
     dir = 'public/data/gtfs/analysis'
     db.connect()
     .then -> 
@@ -233,4 +274,14 @@ if require.main is module
     #    path = "#{dir}/mbta-mean-trip-sequences.json"
     #    exports.dumpTripMeanDelaySequences 'Mbta', path
     .done -> process.exit()
+    ###
+
+    dir = 'public/data/gtfs/analysis'
+    db.connect()
+    .then ->
+        path = "#{dir}/mbta-stop-delays-1700-1800.json"
+        exports.dumpStopDelays 'Mbta', path, (12+5)*60*60, 60*60
+    .done ->
+        console.log 'done'
+        process.exit()
 

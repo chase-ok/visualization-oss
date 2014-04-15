@@ -15,6 +15,7 @@
     "csv": "~0.2",
     "underscore": "*",
     "protobufjs": "~2.0",
-    "q-io": "~1.11"
+    "q-io": "~1.11",
+    "topojson": "~1.6.7"
   }
 }

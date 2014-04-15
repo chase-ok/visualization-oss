@@ -35,6 +35,18 @@ showOpenStreetMap = (projection) ->
                 .attr 'd', path
 
 showRoutes = (projection, routes) ->
+    path = d3.geo.path().projection projection
+
+    routePaths = d3.select(canvasSelector)
+        .selectAll('.route')
+        .data topojson.feature(routes, routes.objects.shapes).features
+
+    routePaths.enter().append 'path'
+        .attr 'class', 'route'
+
+    routePaths
+        .style 'stroke', ({properties}) -> (properties.color or 0).toString 16 
+        .attr 'd', path
 
 $ ->
     {width, height} = getDimensions()
@@ -46,5 +58,5 @@ $ ->
     showOpenStreetMap projection
 
     require('./data.coffee').load()
-    .then (topo) ->
-        console.log topo
+    .then (routes) ->
+        showRoutes projection, routes

@@ -18,7 +18,7 @@ makeBrowserifyArgs = (pack) ->
    --transform node_modules/coffeeify
    -o #{publicJs}/#{pack}.js"
 
-browserifyDirs = ['networks', 'gtfs', 'gtfs-map']
+browserifyDirs = ['networks', 'gtfs', 'gtfs-map', 'gtfs-routes-map']
 
 for dir in browserifyDirs
   do (dir) -> 

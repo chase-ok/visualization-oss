@@ -45,20 +45,35 @@ showOpenStreetMap = (projection) ->
                 .attr 'class', (d) -> d.properties.kind
                 .attr 'd', path
 
+showDelays = (projection, delays) ->
+    radius = 10
+    opacity = d3.scale.linear()
+        .domain d3.extent delays, ({delay}) -> delay
+        .range [0.01, 0.3]
+
+    points = d3.select(canvasSelector)
+        .append 'g'
+        .selectAll '.delay'
+        .data delays
+    
+    points.enter().append 'circle'
+        .attr 'class', 'delay'
+        .attr 'r', radius
+
+    points
+        .attr 'cx', ({lat, lon}) -> projection([lon, lat])[0]
+        .attr 'cy', ({lat, lon}) -> projection([lon, lat])[1]
+        .attr 'opacity', ({delay}) -> opacity delay
+
 $ ->
     {width, height} = getDimensions()
-    console.log getDimensions()
     projection = d3.geo.mercator()
-        #.center [42.359297, -71.060464]
         .center [ -71.060464, 42.359297]
-        #.center [42.404577, -71.168084]
-        .scale (1 << 21)/(2*Math.PI)
+        .scale (1 << 21)/(2*2*Math.PI)
         .translate [width/2, height/2]
 
     showOpenStreetMap projection
 
-    ###
     require('./data.coffee').load()
-    .then ({mainRoads}) ->
-        showMainRoads projection, mainRoads
-    ###
+    .then ({delays}) ->
+        showDelays projection, delays
