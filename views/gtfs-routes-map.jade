@@ -1,0 +1,11 @@
+extends layout
+
+block content
+    link(href='/css/gtfs-map.css', rel='stylesheet')
+    script(src='/js/gtfs-routes-map.js')
+
+    h1 GTFS
+
+    h2 Delay Map
+    .well.well-lg
+        svg#map-canvas(height=800)
