@@ -6,20 +6,20 @@ http2 = require 'http'
 {memoizeUnary} = require '../../utils'
 
 exports.updateSchema = updateSchema = new mongoose.Schema
-    vehicleId: 
+    vehicleId:
         type: String
         index: yes
     tripId:
         type: String
         index: yes
-    start: 
+    start:
         type: Date
         index: yes
     scheduleRelationship: Number
     lat: Number
     lon: Number
     stopSequence: Number
-    timestamp: 
+    timestamp:
         type: Date
         index: yes
 
@@ -65,6 +65,6 @@ exports.getUpdateModel = memoizeUnary (prefix) ->
 
 if require.main is module
     db.connect()
-    .then -> exports.pollUpdateStream 'Mbta', 
+    .then -> exports.pollUpdateStream 'Mbta',
              'http://developer.mbta.com/lib/gtrtfs/Vehicles.pb'
 

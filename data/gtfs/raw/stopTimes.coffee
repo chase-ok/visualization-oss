@@ -13,7 +13,7 @@ parseTime = (x) ->
 fields =
     stopId: 'stop_id'
     tripId: 'trip_id'
-    arrival: 
+    arrival:
         col: 'arrival_time'
         type: Number
         parse: parseTime

@@ -220,7 +220,7 @@ exports.dumpStopDelays = (prefix, path, start=(12+5)*60*60, duration=30*60) ->
     query = exports.getStopDelayModel prefix
         .aggregate()
         .match 
-            scheduledTime: 
+            scheduledTime:
                 $gte: start
                 $lte: end
         .unwind 'delays'

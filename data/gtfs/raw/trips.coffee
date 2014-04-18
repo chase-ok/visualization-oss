@@ -24,7 +24,7 @@ exports.load = (prefix, baseDir) ->
     model = exports.getModel prefix
     utils.resetCsvModel model, fields, "#{baseDir}/trips.txt"
 
-exports.getModel = memoizeUnary (prefix) -> 
+exports.getModel = memoizeUnary (prefix) ->
     mongoose.model "#{prefix}Trip", schema
 
 if require.main is module
