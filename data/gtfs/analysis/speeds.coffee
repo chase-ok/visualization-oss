@@ -131,7 +131,7 @@ exports.computeSpeeds = (prefix) ->
             dx = distance [lats[i-1], lons[i-1]], [lats[i], lons[i]]
             speeds.push dx/dt
 
-        speeds = savitzkyGolaySmoothWindow7 speeds
+        speeds = (Math.max 0, s for s in savitzkyGolaySmoothWindow7 speeds)
         
         speedDocs = []
         for speed, i in speeds
@@ -165,7 +165,6 @@ exports.sequenceSpeedSchema = seqSpeedSchema = new mongoose.Schema
     sequence:
         type: Number
         index: yes
-    timestamps: [Date]
     speeds: [
         timestamp: Date
         value: Number
