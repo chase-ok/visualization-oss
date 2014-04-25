@@ -1,6 +1,7 @@
 
 from numpy import *
 from bisect import bisect_right
+from matplotlib.pyplot import *
 
 def distance(point1, point2):
     return sqrt(sum((point2 - point1)**2))
@@ -21,40 +22,51 @@ class Path(object):
         self.segments = diff(self.points, axis=0)
         self.segment_lengths = sqrt(sum(self.segments**2, axis=1))
         self.cum_segment_lengths = cumsum(self.segment_lengths)
-        self.total_length = sum(self.segment_lengths)
+        self.length = sum(self.segment_lengths)
 
-    def __call__(self, length):
+    def _length_to_index(self, length):
         index = bisect_right(self.cum_segment_lengths, length)
         if index < 0 or index > len(self.cum_segment_lengths):
             raise ValueError(length)
+        return index
 
+    def position(self, length):
+        index = self._length_to_index(length)
         if index > 0:
             length  -= self.cum_segment_lengths[index-1]
         p = float(length)/self.segment_lengths[index]
         return self.points[index] + p*self.segments[index]
 
+    def direction(self, length):
+        segment = self.segments[self._length_to_index(length)]
+        return segment/linalg.norm(segment)
+
     def __add__(self, other_path):
+        other_points = other_path.points
         if (self.points[-1] == other_path.points[0]).all():
-            points = self.points[:-1, :]
+            other_points = other_points[1:, :]
         else:
-            points = self.points
-        return Path(vstack((points, other_path.points))) 
+            offset = other_path.start - self.end
+            other_points -= offset
+        return Path(vstack((self.points, other_points))) 
 
-def single_segment_path(length, offset=[0, 0]):
-    offset = array(offset)
-    return Path(offset + array([[0, 0], [length, 0]]))
+    def plot(self, *plot_args, **plot_kwargs):
+        plot(self.points[:, 0], self.points[:, 1], *plot_args, **plot_kwargs)
 
-def corner_path(length, offset=[0, 0]):
-    offset = array(offset)
-    return Path(offset + array([[0, 0], 
-                                [length/2., 0], 
-                                [length/2., length/2.]]))
+def single_segment_path(length):
+    return Path([[0, 0], [length, 0]])
+
+def corner_path(length):
+    return Path([[0, 0], [length/2., 0], [length/2., length/2.]])
 
 if __name__ == '__main__':
     path = single_segment_path(10)
-    path += corner_path(10, offset=path.end)
+    path += corner_path(10) 
     print path.points
-    print path.total_length
+    print path.length
     print path.segments
-    print path(1), path(7), path(16), path(19)
+    print path.position(1), path.position(16)
+    print path.direction(1), path.direction(16)
     
+    path.plot()
+    show()
