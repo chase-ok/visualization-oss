@@ -53,8 +53,8 @@ class Path(object):
     def plot(self, *plot_args, **plot_kwargs):
         plot(self.points[:, 0], self.points[:, 1], *plot_args, **plot_kwargs)
 
-def single_segment_path(length):
-    return Path([[0, 0], [length, 0]])
+def single_segment_path(length, angle=0):
+    return Path([[0, 0], [length*cos(angle), length*sin(angle)]])
 
 def corner_path(length):
     return Path([[0, 0], [length/2., 0], [length/2., length/2.]])

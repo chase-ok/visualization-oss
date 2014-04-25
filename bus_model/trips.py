@@ -8,6 +8,9 @@ METER = 1/1000.
 KM = 1.
 KPH = 1*KM/(60*60*SEC)
 
+def velocities_to_speeds(velocities):
+    return sqrt(sum(velocities**2, axis=1)) 
+
 class Trip(object):
 
     def __init__(self, times, path, true_path, true_velocities):
@@ -15,6 +18,25 @@ class Trip(object):
         self.path = path
         self.true_path = true_path
         self.true_velocities = true_velocities
+
+    @property
+    def naive_velocities(self):
+        return self.path.segments/self.durations[:, newaxis]
+
+    @property
+    def durations(self):
+        return diff(self.times)
+
+    def plot_naive_speeds(self, *plot_args, **plot_kwargs):
+        print self.naive_velocities.shape
+        print velocities_to_speeds(self.naive_velocities).shape
+        plot(self.times[:-1], velocities_to_speeds(self.naive_velocities), 
+             *plot_args, **plot_kwargs)
+    
+    def plot_true_speeds(self, *plot_args, **plot_kwargs):
+        plot(self.times[:-1], velocities_to_speeds(self.true_velocities[:-1]), 
+             *plot_args, **plot_kwargs)
+
 
 class TripBuilder(object):
 
@@ -32,7 +54,7 @@ class TripBuilder(object):
         self.true_velocities.append(true_velocity)
 
     def build(self):
-        return Trip(self.times, paths.Path(self.points), 
+        return Trip(array(self.times), paths.Path(self.points), 
                     paths.Path(self.true_points), array(self.true_velocities))
 
 def constant_speed(speed):
@@ -94,10 +116,14 @@ class Vehicle(object):
 
         return trip.build()
 
-if __name__ == '__main__':
-    path = paths.single_segment_path(1*KM)
+
+def path_test():
+    path = paths.single_segment_path(0.6*KM)
     path += paths.corner_path(1*KM)
-    path += paths.single_segment_path(1*KM)
+    path += paths.single_segment_path(0.3*KM)
+    path += paths.single_segment_path(0.5*KM, pi/2)
+    path += paths.single_segment_path(0.4*KM, pi/4)
+    path += paths.single_segment_path(1.0*KM, -pi/2)
     path.plot('k-'); hold(True)
 
     bus = Vehicle(duty_cycle_speed(30*KPH, 120*SEC, 0.6), 
@@ -110,4 +136,25 @@ if __name__ == '__main__':
     gca().set_aspect('equal')
     show()
 
+def speeds_test():
+    path = paths.single_segment_path(0.6*KM)
+    path += paths.corner_path(1.0*KM)
+    path += paths.single_segment_path(0.3*KM)
+    path += paths.single_segment_path(0.5*KM, pi/2)
+    path += paths.single_segment_path(0.4*KM, pi/4)
+    path += paths.single_segment_path(1.0*KM, -pi/2)
 
+    bus = Vehicle(duty_cycle_speed(30*KPH, 120*SEC, 0.8), 
+                  gaussian_position_error(15*METER))
+
+    trip = bus.drive_path(path,
+                          exponential_sample_time(30*SEC, 5*SEC))
+
+    trip.plot_naive_speeds('r-', label='naive'); hold(True)
+    trip.plot_true_speeds('b--', label='true')
+    legend()
+    show()
+
+if __name__ == '__main__':
+    path_test()
+    speeds_test()
