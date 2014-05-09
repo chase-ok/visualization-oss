@@ -10,7 +10,7 @@ def discretize_path(path):
         points.append(path.position(dist))
     return array(points)
 
-GPS_STD = 0.05
+GPS_STD = 0.08
 
 def point_log_likelihood(trip, discrete_path):
     like = empty((len(trip), discrete_path.shape[0]), float)
@@ -22,7 +22,7 @@ def point_log_likelihood(trip, discrete_path):
     return like
 
 HOUR = 60.*60
-MAX_VEL = 80./HOUR
+MAX_VEL = 60./HOUR
 DVEL = 1./HOUR
 VELOCITIES = linspace(0, MAX_VEL, MAX_VEL/DVEL)
 
@@ -50,9 +50,16 @@ def velocity_log_likelihood(trip, discrete_path, point_like,
     return like
 
 
-def velocity_log_pdf(slow_mean=0/HOUR, slow_std=15/HOUR,
-                 fast_mean=30/HOUR, fast_std=10/HOUR,
-                 ratio=0.6, uniform=0.05):
+def velocity_log_pdf(mean=20/HOUR, std=15/HOUR,
+                     uniform=0.05):
+    x = VELOCITIES
+    normal = exp(-(x-mean)**2/(2*std**2))
+    mixture = normal + uniform
+    return log(mixture/mixture.sum())
+
+def velocity_log_pdf_old(slow_mean=8/HOUR, slow_std=15/HOUR,
+                 fast_mean=40/HOUR, fast_std=10/HOUR,
+                 ratio=0.5, uniform=0.02):
     x = VELOCITIES
     slow = ratio*exp(-(x-slow_mean)**2/(2*slow_std**2))
     fast = (1-ratio)*exp(-(x-fast_mean)**2/(2*fast_std**2))
@@ -67,13 +74,30 @@ def match_velocity_pdf(log_pdf, velocity_like):
     return log_prob
 
 def show_velocity_like(trips):
-    true_path = trips[0].true_path
+    i = 31 #i = random.randint(len(trips))
+    print i 
+
+    true_path = trips[i].true_path
     discrete_path = discretize_path(true_path)
-    point_like = point_log_likelihood(trips[0], discrete_path)
-    velocity_like = velocity_log_likelihood(trips[0], discrete_path, point_like)
+    point_like = point_log_likelihood(trips[i], discrete_path)
+    velocity_like = velocity_log_likelihood(trips[i], discrete_path, point_like)
     print velocity_like
     pcolor(exp(velocity_like).T)
     show()
+
+    combined = empty(velocity_like.shape[1], float)
+    for i in range(combined.size):
+        combined[i] = logaddexp.reduce(velocity_like[:, i])
+    combined -= combined.max()
+    plot(VELOCITIES*HOUR, exp(combined)/exp(combined).sum())
+    hold(True)
+
+    #log_pdf = velocity_log_pdf(ratio=0.8, fast_mean=30/HOUR)
+    log_pdf = velocity_log_pdf()
+    plot(VELOCITIES*HOUR, exp(log_pdf))
+    print match_velocity_pdf(log_pdf, velocity_like)
+    show()
+
 
 
 def bayes_update(priors, velocity_log_pdfs, trips):
@@ -104,29 +128,24 @@ def create_suite(*param_ranges):
     return param_ranges, priors, models
 
 def run(trips):
-    #pdf = velocity_pdf()
-    #plot(VELOCITIES, pdf(VELOCITIES))
-    #show()
-
-    plot(VELOCITIES, velocity_log_pdf(fast_mean=80/HOUR, ratio=0.01))
-    show()
+    show_velocity_like(trips)
 
     param_ranges, priors, models = create_suite(
-            ('fast_mean', linspace(10/HOUR, 80/HOUR)),
-            ('ratio', linspace(0.05, 0.6)))
+            ('mean', linspace(1/HOUR, 50/HOUR)),
+            ('std', linspace(5/HOUR, 50/HOUR)))
 
-    bayes_update(priors, models, trips[:20])
+    bayes_update(priors, models, trips[31:32])
     
     posteriors = exp(priors)
     posteriors /= posteriors.sum()
     #posteriors = priors
 
-    fast_mean, ratio = meshgrid(param_ranges[0][1], param_ranges[1][1])
-    pcolor(fast_mean*HOUR, ratio, posteriors)
+    mean, std = meshgrid(param_ranges[0][1], param_ranges[1][1])
+    pcolor(mean*HOUR, std*HOUR, posteriors)
 
     colorbar()
     xlabel('Speed [kph]')
-    ylabel('Ratio of Slow to Fast Traffic')
-    xlim([10, 80])
-    ylim([0.05, 0.6])
+    ylabel('Std. of Speed [kph]')
+    xlim([1/HOUR, 50/HOUR])
+    ylim([5/HOUR, 50/HOUR])
     show()
