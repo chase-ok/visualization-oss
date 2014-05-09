@@ -13,7 +13,7 @@ def velocities_to_speeds(velocities):
 
 class Trip(object):
 
-    def __init__(self, times, path, true_path, true_velocities):
+    def __init__(self, times, path, true_path=None, true_velocities=None):
         self.times = times
         self.path = path
         self.true_path = true_path
@@ -28,8 +28,6 @@ class Trip(object):
         return diff(self.times)
 
     def plot_naive_speeds(self, *plot_args, **plot_kwargs):
-        print self.naive_velocities.shape
-        print velocities_to_speeds(self.naive_velocities).shape
         plot(self.times[:-1], velocities_to_speeds(self.naive_velocities), 
              *plot_args, **plot_kwargs)
     

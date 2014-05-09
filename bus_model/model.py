@@ -109,7 +109,7 @@ if __name__ == '__main__':
     param_values['position_std'] = 30*METER
     print param_values
 
-    for i in range(5):
+    for i in range(1):
         print i
         trip = generate_trip(param_values, paths['complicated'])
         bayes_update(priors, models, trip)
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     pcolor(speed/KPH, std/METER, posteriors)
     hold(True)
     plot(param_values['speed']*param_values['duty']/KPH, 
-         param_values['position_std']/METER, 'kx', ms=10)
+         param_values['position_std']/METER, 'wx', ms=10)
     xlabel('Speed [kph]')
     ylabel('Position std. [m]')
     colorbar()

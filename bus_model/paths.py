@@ -52,12 +52,26 @@ class Path(object):
 
     def plot(self, *plot_args, **plot_kwargs):
         plot(self.points[:, 0], self.points[:, 1], *plot_args, **plot_kwargs)
+        axis('equal')
 
 def single_segment_path(length, angle=0):
     return Path([[0, 0], [length*cos(angle), length*sin(angle)]])
 
 def corner_path(length):
     return Path([[0, 0], [length/2., 0], [length/2., length/2.]])
+
+
+EARTH_RADIUS = 6378 # km
+
+def path_from_lon_lat(lon_lats):
+    average_lat = lon_lats[:, 1].mean()
+    lon_lats -= lon_lats.min(axis=0)[newaxis, :]
+
+    lon_lats[:, 0] *= EARTH_RADIUS*2*pi/360.*cos(average_lat*pi/180.)
+    lon_lats[:, 1] *= EARTH_RADIUS*2*pi/360.
+    
+    return Path(lon_lats)
+
 
 if __name__ == '__main__':
     path = single_segment_path(10)
