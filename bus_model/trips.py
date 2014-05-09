@@ -21,7 +21,7 @@ class Trip(object):
 
     @property
     def naive_velocities(self):
-        return self.path.segments/self.durations[:, newaxis]
+        return self.path.segments/self.durations[:, newaxis]*(60*60*SEC)
 
     @property
     def durations(self):

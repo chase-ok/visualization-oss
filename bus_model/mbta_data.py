@@ -27,25 +27,50 @@ def show_path():
     path.plot()
     show()
 
-def find_real_trips(query=route8_query, min_points=10):
+def find_real_trips(query=route8_query, min_points=10, 
+                    trip_separation_threshold=30*60):
     trip_ids = find_trip_ids(query)
 
     agg = db.mbtavehicleupdates.aggregate([
         {'$match': {'tripId': {'$in': list(trip_ids)}}},
-        {'$group': {'_id': {'vehicleId': '$vehicleId', 'start': '$start'},
-                    'lats': {'$push': '$lat'},
-                    'lons': {'$push': '$lon'},
-                    'times': {'$push': '$timestamp'}}}])
+        {'$group': {
+            '_id': {'vehicleId': '$vehicleId', 'start': '$start'},
+            'points': {'$push': { 
+                'lat': '$lat',
+                'lon': '$lon',
+                'time': '$timestamp'}}}},
+        {'$unwind': '$points'},
+        {'$sort': {'points.time': 1}},
+        {'$group': {
+            '_id': '$_id',
+            'lats': {'$push': '$points.lat'},
+            'lons': {'$push': '$points.lon'},
+            'times': {'$push': '$points.time'}}}])
     
     trips = []
     for trip in agg['result']:
-        times = trip['times']
-        if len(times) < min_points: continue
+        trip_times = [(t - trip['times'][0]).total_seconds() 
+                      for t in trip['times']]
+        if len(trip_times) < min_points: continue
 
-        path = path_from_lon_lat(array(zip(trip['lons'], trip['lats'])))
-        times = [(t - times[0]).total_seconds() for t in times]
+        lon_lats = []
+        times = []
 
-        trips.append(Trip(array(times), path))
+        for time, lon, lat in zip(trip_times, trip['lons'], trip['lats']):
+            if times and times[-1] == time: continue
+            
+            if times and time - times[-1] > trip_separation_threshold:
+                trips.append(Trip(array(times), 
+                                  path_from_lon_lat(array(lon_lats))))
+                lon_lats = []
+                times = []
+
+            lon_lats.append([lon, lat])
+            times.append(time)
+
+        if times:
+            trips.append(Trip(array(times), 
+                              path_from_lon_lat(array(lon_lats))))
 
     return trips
 
@@ -58,6 +83,16 @@ def create_trip_sample(query=route8_query):
 
     return trips
 
-sample = create_trip_sample()
-sample[0].plot_naive_speeds()
-show()
+def show_sample():
+    trips = create_trip_sample()
+    longest = max(trips, key=lambda t: len(t.times))
+    
+    longest.true_path.plot('k-'); hold(True)
+    longest.path.plot('rx')
+    axis('equal')
+    show()
+
+    longest.plot_naive_speeds()
+    show()
+
+show_sample()
