@@ -35,6 +35,9 @@ class Trip(object):
         plot(self.times[:-1], velocities_to_speeds(self.true_velocities[:-1]), 
              *plot_args, **plot_kwargs)
 
+    def __len__(self):
+        return len(self.times)
+
 
 class TripBuilder(object):
 

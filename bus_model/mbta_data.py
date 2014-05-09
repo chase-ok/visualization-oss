@@ -95,4 +95,3 @@ def show_sample():
     longest.plot_naive_speeds()
     show()
 
-show_sample()
