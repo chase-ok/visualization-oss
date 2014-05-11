@@ -22,7 +22,7 @@ def point_log_likelihood(trip, discrete_path):
     return like
 
 HOUR = 60.*60
-MAX_VEL = 60./HOUR
+MAX_VEL = 70./HOUR
 DVEL = 1./HOUR
 VELOCITIES = linspace(0, MAX_VEL, MAX_VEL/DVEL)
 
@@ -73,37 +73,38 @@ def match_velocity_pdf(log_pdf, velocity_like):
         log_prob += logaddexp.reduce(joint)
     return log_prob
 
-def show_velocity_like(trips):
-    i = 31 #i = random.randint(len(trips))
-    print i 
-
-    true_path = trips[i].true_path
+def show_velocity_like(trip):
+    true_path = trip.true_path
     discrete_path = discretize_path(true_path)
-    point_like = point_log_likelihood(trips[i], discrete_path)
-    velocity_like = velocity_log_likelihood(trips[i], discrete_path, point_like)
-    print velocity_like
-    pcolor(exp(velocity_like).T)
+    point_like = point_log_likelihood(trip, discrete_path)
+    velocity_like = velocity_log_likelihood(trip, discrete_path, point_like)
+
+    times, speeds = meshgrid(trip.times, VELOCITIES)
+    pcolor(times, speeds*HOUR, exp(velocity_like).T)
+    xlabel('Time [s]')
+    ylabel('Speed [kph]')
+    xlim([times.min(), times.max()])
     show()
 
     combined = empty(velocity_like.shape[1], float)
     for i in range(combined.size):
         combined[i] = logaddexp.reduce(velocity_like[:, i])
     combined -= combined.max()
-    plot(VELOCITIES*HOUR, exp(combined)/exp(combined).sum())
+    plot(VELOCITIES*HOUR, exp(combined)/exp(combined).sum(), label='Combined Data')
     hold(True)
 
-    #log_pdf = velocity_log_pdf(ratio=0.8, fast_mean=30/HOUR)
-    log_pdf = velocity_log_pdf()
-    plot(VELOCITIES*HOUR, exp(log_pdf))
-    print match_velocity_pdf(log_pdf, velocity_like)
+    log_pdf = velocity_log_pdf(mean=10/HOUR, std=18/HOUR)
+    plot(VELOCITIES*HOUR, exp(log_pdf), label='Model')
+
+    xlabel('Speed [kph]')
+    ylabel('PDF')
+    legend()
+    
     show()
 
 
-
 def bayes_update(priors, velocity_log_pdfs, trips):
-    for i, trip in enumerate(trips):
-        print 'trip {0} of {1}'.format(i, len(trips))
-
+    for trip in trips:
         discrete = discretize_path(trip.true_path)
         point_like = point_log_likelihood(trip, discrete)
         velocity_like = velocity_log_likelihood(trip, discrete, point_like)
@@ -127,14 +128,24 @@ def create_suite(*param_ranges):
 
     return param_ranges, priors, models
 
-def run(trips):
-    show_velocity_like(trips)
+def estimate_params(trip):
+    param_ranges, priors, models = create_suite(
+            ('mean', linspace(1/HOUR, 40/HOUR)),
+            ('std', linspace(1/HOUR, 40/HOUR)))
+
+    bayes_update(priors, models, [trip])
+
+    max_index = unravel_index(priors.argmax(), priors.shape)
+    return dict((p[0], p[1][i]*HOUR) for p, i in zip(param_ranges, max_index))
+
+def show_param_estimates(trip):
+    show_velocity_like(trip)
 
     param_ranges, priors, models = create_suite(
-            ('mean', linspace(1/HOUR, 50/HOUR)),
-            ('std', linspace(5/HOUR, 50/HOUR)))
+            ('mean', linspace(1/HOUR, 30/HOUR)),
+            ('std', linspace(1/HOUR, 30/HOUR)))
 
-    bayes_update(priors, models, trips[31:32])
+    bayes_update(priors, models, [trip])
     
     posteriors = exp(priors)
     posteriors /= posteriors.sum()
@@ -146,6 +157,6 @@ def run(trips):
     colorbar()
     xlabel('Speed [kph]')
     ylabel('Std. of Speed [kph]')
-    xlim([1/HOUR, 50/HOUR])
-    ylim([5/HOUR, 50/HOUR])
+    xlim([1, 30])
+    ylim([1, 30])
     show()
