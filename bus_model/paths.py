@@ -63,7 +63,10 @@ def corner_path(length):
 
 EARTH_RADIUS = 6378 # km
 
-def path_from_lon_lat(lon_lats):
+def path_from_lon_lat(lon_lats, convert=True):
+    if not convert:
+        return Path(lon_lats)
+
     average_lat = lon_lats[:, 1].mean()
     lon_lats -= lon_lats.min(axis=0)[newaxis, :]
 

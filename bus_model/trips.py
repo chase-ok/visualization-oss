@@ -13,11 +13,13 @@ def velocities_to_speeds(velocities):
 
 class Trip(object):
 
-    def __init__(self, times, path, true_path=None, true_velocities=None):
+    def __init__(self, times, path, true_path=None, true_velocities=None, 
+                 start_time=None):
         self.times = times
         self.path = path
         self.true_path = true_path
         self.true_velocities = true_velocities
+        self.start_time = start_time
 
     @property
     def naive_velocities(self):

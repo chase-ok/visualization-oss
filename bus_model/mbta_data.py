@@ -7,6 +7,8 @@ from paths import Path, path_from_lon_lat
 from trips import Trip
 from numpy import *
 from matplotlib.pyplot import *
+import datetime
+import json
 
 route8_query = dict(routeId='08',
                     headsign='Kenmore Station via South Bay Center & Ruggles Station')
@@ -49,7 +51,8 @@ def find_real_trips(query=route8_query, min_points=10,
     
     trips = []
     for trip in agg['result']:
-        trip_times = [(t - trip['times'][0]).total_seconds() 
+        start_time = trip['times'][0]
+        trip_times = [(t - start_time).total_seconds() 
                       for t in trip['times']]
         if len(trip_times) < min_points: continue
 
@@ -60,8 +63,10 @@ def find_real_trips(query=route8_query, min_points=10,
             if times and times[-1] == time: continue
             
             if times and time - times[-1] > trip_separation_threshold:
+                dt = datetime.timedelta(seconds=times[0])
                 trips.append(Trip(array(times), 
-                                  path_from_lon_lat(array(lon_lats))))
+                                  path_from_lon_lat(array(lon_lats), False),
+                                  start_time=start_time+dt))
                 lon_lats = []
                 times = []
 
@@ -69,8 +74,10 @@ def find_real_trips(query=route8_query, min_points=10,
             times.append(time)
 
         if times:
+            dt = datetime.timedelta(seconds=times[0])
             trips.append(Trip(array(times), 
-                              path_from_lon_lat(array(lon_lats))))
+                              path_from_lon_lat(array(lon_lats), False),
+                              start_time=start_time+dt))
 
     return trips
 
@@ -94,4 +101,22 @@ def show_sample():
 
     longest.plot_naive_speeds()
     show()
+
+def datetime_to_epoch(dt):
+    return (dt - datetime.datetime.utcfromtimestamp(0)).total_seconds()
+
+def dump_trip_sample(path):
+    as_dicts = []
+    for trip in create_trip_sample():
+        print trip
+        print trip.start_time
+        as_dicts.append({
+            'times': trip.times.tolist(),
+            'start_time': datetime_to_epoch(trip.start_time), 
+            'path': trip.path.points.tolist()})
+
+    with open(path, 'w') as f:
+        json.dump(as_dicts, f)
+            
+
 
