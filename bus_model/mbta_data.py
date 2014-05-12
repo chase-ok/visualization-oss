@@ -22,7 +22,7 @@ def find_shape(query=route8_query):
 
 def shape_to_path(shape):
     points = array([[p['lon'], p['lat']] for p in shape['points']]) 
-    return path_from_lon_lat(points, False)
+    return path_from_lon_lat(points, True)
 
 def show_path():
     path = shape_to_path(find_shape())
@@ -65,7 +65,7 @@ def find_real_trips(query=route8_query, min_points=10,
             if times and time - times[-1] > trip_separation_threshold:
                 dt = datetime.timedelta(seconds=times[0])
                 trips.append(Trip(array(times), 
-                                  path_from_lon_lat(array(lon_lats), False),
+                                  path_from_lon_lat(array(lon_lats), True),
                                   start_time=start_time+dt))
                 lon_lats = []
                 times = []
@@ -76,7 +76,7 @@ def find_real_trips(query=route8_query, min_points=10,
         if times:
             dt = datetime.timedelta(seconds=times[0])
             trips.append(Trip(array(times), 
-                              path_from_lon_lat(array(lon_lats), False),
+                              path_from_lon_lat(array(lon_lats), True),
                               start_time=start_time+dt))
 
     return trips

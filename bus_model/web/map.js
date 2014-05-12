@@ -20,7 +20,7 @@ exports.show = function(trips, canvas) {
 
     var zoom = d3.behavior.zoom()
         .scale(projection.scale() * 2 * Math.PI)
-        .scaleExtent([1 << 20, 1 << 23])
+        .scaleExtent([1 << 20, 1 << 25])
         .translate(projection([-71.0752, 42.335]).map(function(x) { return -x; }))
         .on("zoom", zoomed);
 

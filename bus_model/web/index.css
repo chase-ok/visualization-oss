@@ -22,6 +22,25 @@ path {
     stroke: #f39;
 }
 
+.route-path-real-data {
+    fill: none;
+    stroke-width: 2px;
+    stroke: #222;
+}
+
+.real-data-point {
+    stroke: none;
+    fill: #222;
+}
+
+rect.scale-indicator {
+    fill: #000;
+    stroke: none;
+}
+text.scale-indicator {
+    font-size: 10px;
+}
+
 .map {
   position: relative;
   overflow: hidden;
@@ -45,9 +64,20 @@ path {
     height: 400px;
 }
 
-
 .coord-info {
   position: absolute;
   bottom: 10px;
   left: 10px;
+}
+
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.axis text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
 }

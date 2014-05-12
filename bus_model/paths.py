@@ -68,7 +68,7 @@ def path_from_lon_lat(lon_lats, convert=True):
         return Path(lon_lats)
 
     average_lat = lon_lats[:, 1].mean()
-    lon_lats -= lon_lats.min(axis=0)[newaxis, :]
+    #lon_lats -= lon_lats.min(axis=0)[newaxis, :]
 
     lon_lats[:, 0] *= EARTH_RADIUS*2*pi/360.*cos(average_lat*pi/180.)
     lon_lats[:, 1] *= EARTH_RADIUS*2*pi/360.
