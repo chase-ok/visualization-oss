@@ -22,6 +22,11 @@ path {
     stroke: #f39;
 }
 
+.route-path.model {
+    stroke-width: 5px;
+    stroke: black;
+}
+
 .route-path-real-data {
     fill: none;
     stroke-width: 2px;
