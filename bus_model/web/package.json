@@ -1,0 +1,16 @@
+{
+  "name": "visualizations-oss",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": "~3.1.2",
+    "jade": "~1.1.5",
+    "coffeeify": "~0.6.0",
+    "uglify-js": "~2.4.12",
+    "coffee-script": "1.7.1",
+    "q": "~1.0.0",
+    "csv": "~0.2",
+    "underscore": "*",
+    "q-io": "~1.11"
+  }
+}

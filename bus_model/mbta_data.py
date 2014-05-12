@@ -22,7 +22,7 @@ def find_shape(query=route8_query):
 
 def shape_to_path(shape):
     points = array([[p['lon'], p['lat']] for p in shape['points']]) 
-    return path_from_lon_lat(points)
+    return path_from_lon_lat(points, False)
 
 def show_path():
     path = shape_to_path(find_shape())
@@ -113,6 +113,7 @@ def dump_trip_sample(path):
         as_dicts.append({
             'times': trip.times.tolist(),
             'start_time': datetime_to_epoch(trip.start_time), 
+            'true_path': trip.true_path.points.tolist(),
             'path': trip.path.points.tolist()})
 
     with open(path, 'w') as f:

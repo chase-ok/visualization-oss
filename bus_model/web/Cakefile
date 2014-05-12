@@ -1,0 +1,48 @@
+fs = require 'fs'
+
+{print} = require 'sys'
+{spawn, exec} = require 'child_process'
+
+execAndLog = (cmd, done) ->
+  exec cmd, (err, stdout, stderr) ->
+    process.stderr.write stderr if stderr?
+    print stdout if stdout?
+    process.stderr.write err.toString() if err
+    done? err
+
+makeBrowserifyArgs = (pack) ->
+  "#{pack}.coffee --debug
+   --transform node_modules/coffeeify
+   -o js/#{pack}.js"
+
+browserifyDirs = ['index']
+
+for dir in browserifyDirs
+  do (dir) -> 
+    task "build:#{dir}", ->
+      execAndLog "browserify #{makeBrowserifyArgs dir}"
+    task "watch:#{dir}", ->
+      execAndLog "watchify #{makeBrowserifyArgs dir}"
+
+
+vendorDir = 'vendor'
+vendorLibs = [ # need to specify in order for deps
+  'jquery',
+  'd3', 'topojson', 'tile',
+  'q', 'underscore'
+  'bootstrap', 'bootstrap-switch', 'bootstrap-slider', 'bootstrap-colorpicker'
+]
+
+bundleVendorLibs = ->
+  libraries = ("#{vendorDir}/#{lib}.js" for lib in vendorLibs)
+  execAndLog "uglifyjs #{libraries.join ' '}
+              -c -e -m
+              -o js/vendor.js 
+              --source-map js/vendor.map 
+              --source-map-url /js/vendor.map
+              --source-map-include-sources
+              --screw-ie8"
+task 'build:vendor', 'Bundle vendor js libraries', bundleVendorLibs
+
+task 'server', 'Starts the node server', ->
+  execAndLog 'python -m SimpleHTTPServer'
