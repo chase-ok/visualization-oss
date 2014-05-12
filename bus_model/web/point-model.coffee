@@ -77,7 +77,7 @@ exports.show = ([{true_path}]) ->
     colorScale = d3.scale.linear()
         .clamp yes
         .domain [-80, 0]
-        .range [d3.rgb(0, 0, 0), d3.rgb(0xFF, 0, 0)]
+        .range [d3.rgb(0x22, 0x22, 0x22), d3.rgb(0xFF, 0, 0)]
 
     onMouse = ->
         [x, y] = d3.mouse this

@@ -1,8 +1,9 @@
 
 from numpy import *
 from matplotlib.pyplot import *
+from matplotlib.cm import Blues_r, Blues, gist_heat, hot, bone
 
-DX = 0.01
+DX = 0.005
 
 def discretize_path(path):
     points = []
@@ -10,7 +11,7 @@ def discretize_path(path):
         points.append(path.position(dist))
     return array(points)
 
-GPS_STD = 0.08
+GPS_STD = 0.06
 
 def point_log_likelihood(trip, discrete_path):
     like = empty((len(trip), discrete_path.shape[0]), float)
@@ -23,7 +24,7 @@ def point_log_likelihood(trip, discrete_path):
 
 HOUR = 60.*60
 MAX_VEL = 70./HOUR
-DVEL = 1./HOUR
+DVEL = 0.25/HOUR
 VELOCITIES = linspace(0, MAX_VEL, MAX_VEL/DVEL)
 
 def velocity_log_likelihood(trip, discrete_path, point_like, 
@@ -80,10 +81,12 @@ def show_velocity_like(trip):
     velocity_like = velocity_log_likelihood(trip, discrete_path, point_like)
 
     times, speeds = meshgrid(trip.times, VELOCITIES)
-    pcolor(times, speeds*HOUR, exp(velocity_like).T)
+    color_axis = pcolor(times, speeds*HOUR, exp(velocity_like).T, cmap=Blues)
+
     xlabel('Time [s]')
     ylabel('Speed [kph]')
     xlim([times.min(), times.max()])
+
     show()
 
     combined = empty(velocity_like.shape[1], float)
@@ -93,8 +96,8 @@ def show_velocity_like(trip):
     plot(VELOCITIES*HOUR, exp(combined)/exp(combined).sum(), label='Combined Data')
     hold(True)
 
-    log_pdf = velocity_log_pdf(mean=10/HOUR, std=18/HOUR)
-    plot(VELOCITIES*HOUR, exp(log_pdf), label='Model')
+    log_pdf = velocity_log_pdf(mean=15/HOUR, std=13/HOUR, uniform=0.02)
+    plot(VELOCITIES*HOUR, exp(log_pdf), label=r'$\sigma=13$kph, $\mu=15$kph')
 
     xlabel('Speed [kph]')
     ylabel('PDF')
@@ -142,8 +145,8 @@ def show_param_estimates(trip):
     show_velocity_like(trip)
 
     param_ranges, priors, models = create_suite(
-            ('mean', linspace(1/HOUR, 30/HOUR)),
-            ('std', linspace(1/HOUR, 30/HOUR)))
+            ('mean', linspace(1/HOUR, 30/HOUR, 150)),
+            ('std', linspace(1/HOUR, 30/HOUR, 150)))
 
     bayes_update(priors, models, [trip])
     
@@ -152,9 +155,8 @@ def show_param_estimates(trip):
     #posteriors = priors
 
     mean, std = meshgrid(param_ranges[0][1], param_ranges[1][1])
-    pcolor(mean*HOUR, std*HOUR, posteriors)
+    color_axis = pcolor(mean*HOUR, std*HOUR, posteriors, cmap=Blues)
 
-    colorbar()
     xlabel('Speed [kph]')
     ylabel('Std. of Speed [kph]')
     xlim([1, 30])
