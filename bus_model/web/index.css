@@ -41,6 +41,10 @@ text.scale-indicator {
     font-size: 10px;
 }
 
+.speed-path {
+    stroke: #4682B4;
+}
+
 .map {
   position: relative;
   overflow: hidden;
